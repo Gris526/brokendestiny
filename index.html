@@ -596,7 +596,18 @@
         <div class="modifier-input">
           <select class="stat-select">
             <option value="strength">Strength</option>
-            <!-- [All other stat options] -->
+            <option value="speed">Speed</option>
+            <option value="resistance">Resistance</option>
+            <option value="intelligence">Intelligence</option>
+            <option value="charisma">Charisma</option>
+            <option value="maestry">Maestry</option>
+            <option value="perception">Perception</option>
+            <option value="will">Will</option>
+            <option value="bravery">Bravery</option>
+            <option value="mana">Mana</option>
+            <option value="luck">Luck</option>
+            <option value="stealth">Stealth</option>
+            <option value="size">Size</option>
           </select>
           <input type="number" class="modifier-value" placeholder="+2">
           <button class="add-modifier"><i class="fas fa-plus"></i> Add</button>
@@ -698,7 +709,51 @@
       stealth: 5,
       size: 5
     };
-
+     // Archetype data structure
+    let archetypeModifiers = {
+      warrior: {
+        base: { strength: 2, resistance: 1 },
+        subclasses: {
+          "Berserker": {
+            base: { strength: 1, will: -1 },
+            levelBenefits: {
+              "1": { strength: 1 },
+              "15": { strength: 2, resistance: 1 },
+              "30": { strength: 3, resistance: 2 },
+              "50": { strength: 5, resistance: 3 },
+              "100": { strength: 10, resistance: 5 }
+            }
+          },
+          "Knight": {
+            base: { resistance: 1, charisma: 1 },
+            levelBenefits: {
+              "1": { resistance: 1 },
+              "15": { resistance: 2, charisma: 1 },
+              "30": { resistance: 3, charisma: 2 },
+              "50": { resistance: 4, charisma: 3 },
+              "100": { resistance: 6, charisma: 5 }
+            }
+          }
+        },
+        levelBenefits: {
+          "1": { strength: 1 },
+          "15": { strength: 2, resistance: 1 },
+          "30": { strength: 3, resistance: 2 },
+          "50": { strength: 4, resistance: 3 },
+          "100": { strength: 6, resistance: 5 }
+        }
+      },
+      mage: {
+        base: { intelligence: 2, mana: 1 },
+        subclasses: {},
+        levelBenefits: {}
+      },
+      rogue: {
+        base: { speed: 2, stealth: 1 },
+        subclasses: {},
+        levelBenefits: {}
+      }
+    };
     // Main race data structure
     let raceModifiers = {
       human: {
@@ -753,6 +808,28 @@
       stealth: document.getElementById('stealth'),
       size: document.getElementById('size')
     };
+     const archetypeSlotsContainer = document.getElementById('archetype-slots');
+    const addArchetypeBtn = document.getElementById('add-archetype');
+    const modifyArchetypeBtn = document.getElementById('modify-archetype');
+    const subclassContainer = document.getElementById('subclass-selection');
+    const archetypeBenefitsContainer = document.getElementById('archetype-benefits');
+    const archetypeModifierList = document.getElementById('archetype-modifier-list');
+    const archetypeModal = document.getElementById('archetype-editor-modal');
+    const newArchetypeNameInput = document.getElementById('new-archetype-name');
+    const archetypeEditorModifierList = document.getElementById('archetype-editor-modifier-list');
+    const saveArchetypeBtn = document.getElementById('save-archetype');
+    const deleteArchetypeBtn = document.getElementById('delete-archetype');
+    const subclassModifiersContainer = document.getElementById('subclass-modifiers-container');
+    const addSubclassBtn = document.getElementById('add-subclass');
+    const newSubclassNameInput = document.getElementById('new-subclass-name');
+    const levelBenefitsContainer = document.getElementById('level-benefits-container');
+    const addLevelSectionBtn = document.getElementById('add-level-section');
+    const levelSelect = document.getElementById('level-select');
+
+    // Current editing state for archetypes
+    let currentEditingArchetype = null;
+    let currentSubclasses = {};
+    let currentLevelBenefits = {};
 
     // Base Stats Editor Elements
     const baseStatInputs = {
@@ -852,7 +929,7 @@
 
     // Exponential modifier calculation centered around 5
     function calculateModifier(statValue) {
-      const base = 1.2; // Growth factor (higher = steeper curve)
+      const base = 1.25; // Growth factor (higher = steeper curve)
       const center = 5; // Center point where modifier = 0
       
       // Calculate difference from center
@@ -873,7 +950,204 @@
       const sizeInMeters = baseSize + (sizeValue - 5) * sizePerPoint;
       return Math.max(0.1, sizeInMeters).toFixed(2) + "m";
     }
+      // Initialize archetypes
+    renderArchetypeSlots();
+    updateArchetypeDisplay();
 
+    // Archetype Slot Management
+    function renderArchetypeSlots() {
+      archetypeSlotsContainer.innerHTML = '';
+      const defaultSlot = document.createElement('div');
+      defaultSlot.className = 'race-slot';
+      defaultSlot.innerHTML = `
+        <select class="archetype-dropdown">
+          ${Object.keys(archetypeModifiers).map(archetype => `
+            <option value="${archetype}">${archetype}</option>
+          `).join('')}
+        </select>
+        <input type="number" class="archetype-level" value="1" min="1" max="100">
+        <button class="remove-race"><i class="fas fa-times"></i></button>
+      `;
+      archetypeSlotsContainer.appendChild(defaultSlot);
+      addArchetypeSlotListeners(defaultSlot);
+    }
+
+    function addArchetypeSlotListeners(slot) {
+      const dropdown = slot.querySelector('.archetype-dropdown');
+      const levelInput = slot.querySelector('.archetype-level');
+      const removeBtn = slot.querySelector('.remove-race');
+      
+      dropdown.addEventListener('change', () => {
+        updateSubclassSelection();
+        updateArchetypeDisplay();
+      });
+      
+      levelInput.addEventListener('change', () => {
+        updateArchetypeDisplay();
+      });
+      
+      removeBtn.addEventListener('click', () => {
+        slot.remove();
+        updateSubclassSelection();
+        updateArchetypeDisplay();
+      });
+    }
+
+    addArchetypeBtn.addEventListener('click', () => {
+      const newSlot = document.createElement('div');
+      newSlot.className = 'race-slot';
+      newSlot.innerHTML = `
+        <select class="archetype-dropdown">
+          ${Object.keys(archetypeModifiers).map(archetype => `
+            <option value="${archetype}">${archetype}</option>
+          `).join('')}
+        </select>
+        <input type="number" class="archetype-level" value="1" min="1" max="100">
+        <button class="remove-race"><i class="fas fa-times"></i></button>
+      `;
+      archetypeSlotsContainer.appendChild(newSlot);
+      addArchetypeSlotListeners(newSlot);
+    });
+
+    // Update subclass selection UI
+    function updateSubclassSelection() {
+      subclassContainer.innerHTML = '';
+      const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+      
+      archetypeSlots.forEach(slot => {
+        const archetype = slot.value;
+        const archetypeData = archetypeModifiers[archetype];
+        if (!archetypeData || !archetypeData.subclasses) return;
+        
+        const subclassDiv = document.createElement('div');
+        subclassDiv.className = 'extra-section';
+        subclassDiv.innerHTML = `
+          <div class="section-title">
+            <span>${archetype} Subclass:</span>
+          </div>
+          <select class="subclass-option" data-archetype="${archetype}">
+            <option value="none">None</option>
+            ${Object.keys(archetypeData.subclasses).map(subclass => `
+              <option value="${subclass}">${subclass}</option>
+            `).join('')}
+          </select>
+        `;
+        subclassContainer.appendChild(subclassDiv);
+        
+        subclassDiv.querySelector('.subclass-option').addEventListener('change', updateArchetypeDisplay);
+      });
+    }
+
+    // Update archetype benefits display
+    function updateArchetypeDisplay() {
+      archetypeBenefitsContainer.innerHTML = '';
+      archetypeModifierList.innerHTML = '';
+      
+      const archetypeModifiers = {};
+      const archetypeSlots = document.querySelectorAll('.archetype-slot');
+      
+      archetypeSlots.forEach(slot => {
+        const archetype = slot.querySelector('.archetype-dropdown').value;
+        const level = parseInt(slot.querySelector('.archetype-level').value) || 1;
+        const archetypeData = archetypeModifiers[archetype];
+        if (!archetypeData) return;
+        
+        // Add base modifiers
+        for (const [stat, value] of Object.entries(archetypeData.base || {})) {
+          archetypeModifiers[stat] = (archetypeModifiers[stat] || 0) + value;
+        }
+        
+        // Add level benefits
+        const levels = Object.keys(archetypeData.levelBenefits || {}).map(Number).sort((a,b) => a-b);
+        let highestLevel = 1;
+        
+        for (const lvl of levels) {
+          if (lvl <= level) {
+            highestLevel = lvl;
+          } else {
+            break;
+          }
+        }
+        
+        if (archetypeData.levelBenefits[highestLevel]) {
+          for (const [stat, value] of Object.entries(archetypeData.levelBenefits[highestLevel])) {
+            archetypeModifiers[stat] = (archetypeModifiers[stat] || 0) + value;
+          }
+          
+          // Display level benefits
+          const benefitsDiv = document.createElement('div');
+          benefitsDiv.className = 'extra-section';
+          benefitsDiv.innerHTML = `
+            <div class="section-title">
+              <span>${archetype} Level ${highestLevel} Benefits:</span>
+            </div>
+            <ul>
+              ${Object.entries(archetypeData.levelBenefits[highestLevel]).map(([stat, value]) => `
+                <li>${stat}: ${value > 0 ? '+' : ''}${value}</li>
+              `).join('')}
+            </ul>
+          `;
+          archetypeBenefitsContainer.appendChild(benefitsDiv);
+        }
+        
+        // Add subclass modifiers if selected
+        const subclassSelect = document.querySelector(`.subclass-option[data-archetype="${archetype}"]`);
+        if (subclassSelect && subclassSelect.value !== 'none') {
+          const subclass = subclassSelect.value;
+          const subclassData = archetypeData.subclasses[subclass];
+          
+          if (subclassData) {
+            // Add base subclass modifiers
+            for (const [stat, value] of Object.entries(subclassData.base || {})) {
+              archetypeModifiers[stat] = (archetypeModifiers[stat] || 0) + value;
+            }
+            
+            // Add subclass level benefits
+            const subclassLevels = Object.keys(subclassData.levelBenefits || {}).map(Number).sort((a,b) => a-b);
+            let subclassHighestLevel = 1;
+            
+            for (const lvl of subclassLevels) {
+              if (lvl <= level) {
+                subclassHighestLevel = lvl;
+              } else {
+                break;
+              }
+            }
+            
+            if (subclassData.levelBenefits[subclassHighestLevel]) {
+              for (const [stat, value] of Object.entries(subclassData.levelBenefits[subclassHighestLevel])) {
+                archetypeModifiers[stat] = (archetypeModifiers[stat] || 0) + value;
+              }
+              
+              // Display subclass level benefits
+              const subclassBenefitsDiv = document.createElement('div');
+              subclassBenefitsDiv.className = 'extra-section';
+              subclassBenefitsDiv.innerHTML = `
+                <div class="section-title">
+                  <span>${subclass} Level ${subclassHighestLevel} Benefits:</span>
+                </div>
+                <ul>
+                  ${Object.entries(subclassData.levelBenefits[subclassHighestLevel]).map(([stat, value]) => `
+                    <li>${stat}: ${value > 0 ? '+' : ''}${value}</li>
+                  `).join('')}
+                </ul>
+              `;
+              archetypeBenefitsContainer.appendChild(subclassBenefitsDiv);
+            }
+          }
+        }
+      });
+      
+      // Display all archetype modifiers
+      for (const [stat, value] of Object.entries(archetypeModifiers)) {
+        const li = document.createElement('li');
+        li.className = 'modifier-item';
+        li.innerHTML = `
+          <span>${stat}: ${value > 0 ? '+' : ''}${value}</span>
+        `;
+        archetypeModifierList.appendChild(li);
+      }
+    }
     // --- Race Slot Management ---
     function renderRaceSlots() {
       raceSlotsContainer.innerHTML = '';
