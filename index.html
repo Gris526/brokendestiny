@@ -582,6 +582,57 @@
     </div>
   </div>
 
+  <!-- New Archetype Editor Modal -->
+  <div id="archetype-editor-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3><i class="fas fa-edit"></i> Archetype Editor</h3>
+      <div>
+        <label for="new-archetype-name">Archetype Name:</label>
+        <input type="text" id="new-archetype-name" placeholder="e.g., Necromancer">
+      </div>
+      <div>
+        <h4><i class="fas fa-sliders-h"></i> Base Modifiers:</h4>
+        <div class="modifier-input">
+          <select class="stat-select">
+            <option value="strength">Strength</option>
+            <!-- [All other stat options] -->
+          </select>
+          <input type="number" class="modifier-value" placeholder="+2">
+          <button class="add-modifier"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        <ul id="archetype-editor-modifier-list"></ul>
+      </div>
+      <div>
+        <h4><i class="fas fa-layer-group"></i> Subclasses:</h4>
+        <div class="extra-section-input">
+          <input type="text" id="new-subclass-name" placeholder="e.g., Blood Mage">
+          <button id="add-subclass"><i class="fas fa-plus"></i> Add Subclass</button>
+        </div>
+        <div id="subclass-modifiers-container"></div>
+      </div>
+      <div>
+        <h4><i class="fas fa-level-up-alt"></i> Level Benefits:</h4>
+        <div class="input-group">
+          <select id="level-select">
+            <option value="1">Level 1</option>
+            <option value="15">Level 15</option>
+            <option value="30">Level 30</option>
+            <option value="50">Level 50</option>
+            <option value="100">Level 100</option>
+          </select>
+          <button id="add-level-section"><i class="fas fa-plus"></i> Add Level Section</button>
+        </div>
+        <div id="level-benefits-container"></div>
+      </div>
+      <div class="action-buttons">
+        <button id="save-archetype"><i class="fas fa-save"></i> Save Archetype</button>
+        <button id="delete-archetype"><i class="fas fa-trash"></i> Delete Archetype</button>
+        <button id="reset-archetype-editor"><i class="fas fa-undo"></i> Reset Editor</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Race Editor Modal -->
   <div id="race-editor-modal" class="modal">
     <div class="modal-content">
