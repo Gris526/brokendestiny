@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D&D Character Creator</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #333;
+      --panel-bg: white;
+      --border-color: #ddd;
+      --primary-color: #4CAF50;
+      --primary-hover: #45a049;
+      --danger-color: #f44336;
+      --danger-hover: #d32f2f;
+      --warning-color: #ff9800;
+      --warning-hover: #e68a00;
+      --info-color: #2196F3;
+      --info-hover: #0b7dda;
+      --shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      --input-bg: white;
+      --section-bg: #f8f8f8;
+      --option-bg: #e8e8e8;
+      --modifier-bg: #e0e0e0;
+    }
+
+    .dark-mode {
+      --bg-color: #1a1a1a;
+      --text-color: #f0f0f0;
+      --panel-bg: #2d2d2d;
+      --border-color: #444;
+      --primary-color: #388e3c;
+      --primary-hover: #2e7d32;
+      --input-bg: #3d3d3d;
+      --section-bg: #383838;
+      --option-bg: #484848;
+      --modifier-bg: #585858;
+      --shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .character-creator {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--panel-bg);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      transition: all 0.3s ease;
+    }
+
+    h1, h2, h3, h4 {
+      color: var(--text-color);
+      margin-top: 0;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .theme-toggle {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-color);
+    }
+
+    .stats-editor {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--panel-bg);
+    }
+
+    .stat-input-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .stat-input {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-input label {
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .race-selector {
+      margin-bottom: 20px;
+    }
+
+    select, button, input {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+      background-color: var(--input-bg);
+      color: var(--text-color);
+      transition: all 0.2s ease;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    button i {
+      font-size: 0.9em;
+    }
+
+    .modifiers, .stats-preview, .json-tools {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--panel-bg);
+    }
+
+    .stat {
+      margin: 8px 0;
+      padding: 8px;
+      background-color: var(--section-bg);
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background: var(--panel-bg);
+      margin: 5% auto;
+      padding: 25px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .close {
+      float: right;
+      cursor: pointer;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .modifier-input, .extra-section-input {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .race-slot {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    .remove-race, .remove-section-btn, .remove-option-btn, .remove-modifier-btn {
+      background-color: var(--danger-color);
+      padding: 8px;
+      min-width: 30px;
+    }
+
+    .remove-race:hover, .remove-section-btn:hover, .remove-option-btn:hover, .remove-modifier-btn:hover {
+      background-color: var(--danger-hover);
+    }
+
+    .extra-section {
+      margin-top: 15px;
+      padding: 12px;
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+      background-color: var(--section-bg);
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .editor-extra-section {
+      margin-top: 15px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--section-bg);
+    }
+
+    .section-options-container {
+      margin-left: 15px;
+      margin-top: 10px;
+    }
+
+    .section-option-editor {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: var(--option-bg);
+      border-radius: 6px;
+    }
+
+    .option-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .option-modifiers {
+      margin-top: 8px;
+    }
+
+    .modifier-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px;
+      background-color: var(--modifier-bg);
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+
+    #section-modifiers-container {
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      background-color: var(--section-bg);
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .section-options-container {
+      max-height: 250px;
+      overflow-y: auto;
+      background-color: var(--option-bg);
+      padding: 8px;
+      border-radius: 6px;
+      margin: 8px 0;
+    }
+
+    .option-modifiers {
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: var(--modifier-bg);
+      padding: 6px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    #reset-editor {
+      background-color: var(--warning-color);
+    }
+
+    #reset-editor:hover {
+      background-color: var(--warning-hover);
+    }
+
+    .stat-value {
+      font-weight: bold;
+    }
+
+    .mod-value {
+      font-style: italic;
+    }
+
+    .size-value {
+      font-weight: bold;
+    }
+
+    .modifier-value {
+      flex-grow: 1;
+    }
+
+    .tab-container {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 15px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+    }
+
+    .tab.active {
+      border-bottom: 3px solid var(--primary-color);
+      font-weight: bold;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    #next-features {
+      background-color: var(--info-color);
+    }
+
+    #next-features:hover {
+      background-color: var(--info-hover);
+    }
+
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        margin: 2% auto;
+        padding: 15px;
+      }
+      
+      .modifier-input, .extra-section-input {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .race-slot {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .stat-input-group {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="character-creator">
+    <div class="header-container">
+      <h1><i class="fas fa-dragon"></i> D&D Character Creator</h1>
+      <button class="theme-toggle" id="theme-toggle">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+
+    <div class="tab-container">
+      <div class="tab active" data-tab="stats">Base Stats</div>
+      <div class="tab" data-tab="races">Races</div>
+      <div class="tab" data-tab="next">Coming Soon</div>
+    </div>
+
+    <div class="tab-content active" id="stats-tab">
+      <div class="stats-editor">
+        <h3><i class="fas fa-sliders-h"></i> Edit Base Stats</h3>
+        <div class="stat-input-group">
+          <div class="stat-input">
+            <label for="base-strength">Strength</label>
+            <input type="number" id="base-strength" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-speed">Speed</label>
+            <input type="number" id="base-speed" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-resistance">Resistance</label>
+            <input type="number" id="base-resistance" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-intelligence">Intelligence</label>
+            <input type="number" id="base-intelligence" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-charisma">Charisma</label>
+            <input type="number" id="base-charisma" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-maestry">Maestry</label>
+            <input type="number" id="base-maestry" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-perception">Perception</label>
+            <input type="number" id="base-perception" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-will">Will</label>
+            <input type="number" id="base-will" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-bravery">Bravery</label>
+            <input type="number" id="base-bravery" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-mana">Mana</label>
+            <input type="number" id="base-mana" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-luck">Luck</label>
+            <input type="number" id="base-luck" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-stealth">Stealth</label>
+            <input type="number" id="base-stealth" value="5" min="0">
+          </div>
+          <div class="stat-input">
+            <label for="base-size">Size</label>
+            <input type="number" id="base-size" value="5" min="1">
+          </div>
+        </div>
+        <button id="update-stats"><i class="fas fa-sync-alt"></i> Update Stats</button>
+      </div>
+
+      <div class="stats-preview">
+        <h3><i class="fas fa-chart-bar"></i> Current Stats & Modifiers</h3>
+        <div class="stat" id="strength">Strength: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="speed">Speed: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="resistance">Resistance: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="intelligence">Intelligence: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="charisma">Charisma: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="maestry">Maestry: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="perception">Perception: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="will">Will: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="bravery">Bravery: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="mana">Mana: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="luck">Luck: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="stealth">Stealth: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
+        <div class="stat" id="size">Size: <span class="stat-value">5</span> (<span class="size-value">1.50m</span>)</div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="races-tab">
+      <!-- Race Selection -->
+      <div class="race-selector">
+        <h3><i class="fas fa-users"></i> Race Selection</h3>
+        <div id="race-slots">
+          <div class="race-slot">
+            <select class="race-dropdown">
+              <option value="human">Human</option>
+              <option value="elf">Elf</option>
+              <option value="dwarf">Dwarf</option>
+              <option value="halfling">Halfling</option>
+            </select>
+            <button class="remove-race"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="input-group">
+          <button id="add-race"><i class="fas fa-plus"></i> Add Race</button>
+          <button id="modify-race"><i class="fas fa-edit"></i> Modify/Add Race</button>
+        </div>
+      </div>
+
+      <!-- Extra Traits -->
+      <div id="extra-traits-container"></div>
+
+      <!-- Racial Modifiers Display -->
+      <div class="modifiers">
+        <h3><i class="fas fa-bolt"></i> Active Modifiers</h3>
+        <ul id="modifier-list"></ul>
+      </div>
+    </div>
+
+    <div class="tab-content" id="next-tab">
+      <h3><i class="fas fa-wand-magic-sparkles"></i> Coming Soon</h3>
+      <div class="upcoming-features">
+        <div class="feature-card">
+          <h4><i class="fas fa-user"></i> Classes & Levels</h4>
+          <p>Add character classes with level progression and class features</p>
+        </div>
+        <div class="feature-card">
+          <h4><i class="fas fa-scroll"></i> Skills & Proficiencies</h4>
+          <p>Track skill proficiencies and ability checks</p>
+        </div>
+        <div class="feature-card">
+          <h4><i class="fas fa-sack-dollar"></i> Inventory System</h4>
+          <p>Manage equipment, weapons, armor, and treasure</p>
+        </div>
+        <div class="feature-card">
+          <h4><i class="fas fa-fire"></i> Spells & Abilities</h4>
+          <p>Track known spells and class abilities</p>
+        </div>
+      </div>
+      <button id="next-features"><i class="fas fa-lightbulb"></i> Suggest Features</button>
+    </div>
+
+    <!-- JSON Export/Import -->
+    <div class="json-tools">
+      <h3><i class="fas fa-file-export"></i> Data Management</h3>
+      <div class="input-group">
+        <button id="export-races"><i class="fas fa-download"></i> Export Races</button>
+        <button id="import-races"><i class="fas fa-upload"></i> Import Races</button>
+        <input type="file" id="import-file" accept=".json" style="display: none;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Race Editor Modal -->
+  <div id="race-editor-modal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3><i class="fas fa-edit"></i> Race Editor</h3>
+      <div>
+        <label for="new-race-name">Race Name:</label>
+        <input type="text" id="new-race-name" placeholder="e.g., Vampire">
+      </div>
+      <div>
+        <h4><i class="fas fa-sliders-h"></i> Base Modifiers:</h4>
+        <div class="modifier-input">
+          <select class="stat-select">
+            <option value="strength">Strength</option>
+            <option value="speed">Speed</option>
+            <option value="resistance">Resistance</option>
+            <option value="intelligence">Intelligence</option>
+            <option value="charisma">Charisma</option>
+            <option value="maestry">Maestry</option>
+            <option value="perception">Perception</option>
+            <option value="will">Will</option>
+            <option value="bravery">Bravery</option>
+            <option value="mana">Mana</option>
+            <option value="luck">Luck</option>
+            <option value="stealth">Stealth</option>
+            <option value="size">Size</option>
+          </select>
+          <input type="number" class="modifier-value" placeholder="+2">
+          <button class="add-modifier"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        <ul id="editor-modifier-list"></ul>
+      </div>
+      <div>
+        <h4><i class="fas fa-layer-group"></i> Extra Sections:</h4>
+        <div class="extra-section-input">
+          <input type="text" id="new-section-name" placeholder="e.g., Human Potential">
+          <button id="add-section"><i class="fas fa-plus"></i> Add Section</button>
+        </div>
+        <div id="section-modifiers-container"></div>
+      </div>
+      <div class="action-buttons">
+        <button id="save-race"><i class="fas fa-save"></i> Save Race</button>
+        <button id="delete-race"><i class="fas fa-trash"></i> Delete Race</button>
+        <button id="reset-editor"><i class="fas fa-undo"></i> Reset Editor</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize base stats
+    let baseStats = {
+      strength: 5,
+      speed: 5,
+      resistance: 5,
+      intelligence: 5,
+      charisma: 5,
+      maestry: 5,
+      perception: 5,
+      will: 5,
+      bravery: 5,
+      mana: 5,
+      luck: 5,
+      stealth: 5,
+      size: 5
+    };
+
+    // Main race data structure
+    let raceModifiers = {
+      human: {
+        base: { 
+          strength: 1, 
+          speed: 1, 
+          resistance: 1, 
+          intelligence: 1, 
+          charisma: 1 
+        },
+        extraSections: {
+          "Human Potential": {
+            "0%": {},
+            "25%": { strength: 1, speed: 1 },
+            "50%": { strength: 2, speed: 2, resistance: 1 },
+            "100%": { strength: 3, speed: 3, resistance: 2, intelligence: 2, charisma: 2 }
+          }
+        }
+      },
+      elf: {
+        base: { speed: 2, intelligence: 1, perception: 1 },
+        extraSections: {}
+      },
+      dwarf: {
+        base: { resistance: 2, strength: 1, size: 1 },
+        extraSections: {}
+      },
+      halfling: {
+        base: { speed: 2, stealth: 1, size: -1 },
+        extraSections: {}
+      }
+    };
+
+    // DOM Elements
+    const raceSlotsContainer = document.getElementById('race-slots');
+    const addRaceBtn = document.getElementById('add-race');
+    const modifyRaceBtn = document.getElementById('modify-race');
+    const extraTraitsContainer = document.getElementById('extra-traits-container');
+    const modifierList = document.getElementById('modifier-list');
+    const statElements = {
+      strength: document.getElementById('strength'),
+      speed: document.getElementById('speed'),
+      resistance: document.getElementById('resistance'),
+      intelligence: document.getElementById('intelligence'),
+      charisma: document.getElementById('charisma'),
+      maestry: document.getElementById('maestry'),
+      perception: document.getElementById('perception'),
+      will: document.getElementById('will'),
+      bravery: document.getElementById('bravery'),
+      mana: document.getElementById('mana'),
+      luck: document.getElementById('luck'),
+      stealth: document.getElementById('stealth'),
+      size: document.getElementById('size')
+    };
+
+    // Base Stats Editor Elements
+    const baseStatInputs = {
+      strength: document.getElementById('base-strength'),
+      speed: document.getElementById('base-speed'),
+      resistance: document.getElementById('base-resistance'),
+      intelligence: document.getElementById('base-intelligence'),
+      charisma: document.getElementById('base-charisma'),
+      maestry: document.getElementById('base-maestry'),
+      perception: document.getElementById('base-perception'),
+      will: document.getElementById('base-will'),
+      bravery: document.getElementById('base-bravery'),
+      mana: document.getElementById('base-mana'),
+      luck: document.getElementById('base-luck'),
+      stealth: document.getElementById('base-stealth'),
+      size: document.getElementById('base-size')
+    };
+    const updateStatsBtn = document.getElementById('update-stats');
+
+    // Race Editor Elements
+    const modal = document.getElementById('race-editor-modal');
+    const closeModal = document.querySelector('.close');
+    const newRaceNameInput = document.getElementById('new-race-name');
+    const editorModifierList = document.getElementById('editor-modifier-list');
+    const saveRaceBtn = document.getElementById('save-race');
+    const deleteRaceBtn = document.getElementById('delete-race');
+    const sectionModifiersContainer = document.getElementById('section-modifiers-container');
+    const addSectionBtn = document.getElementById('add-section');
+    const newSectionNameInput = document.getElementById('new-section-name');
+    const statSelect = document.querySelector('.stat-select');
+    const modifierValueInput = document.querySelector('.modifier-value');
+    const addModifierBtn = document.querySelector('.add-modifier');
+    const themeToggle = document.getElementById('theme-toggle');
+    const resetEditorBtn = document.getElementById('reset-editor');
+    const nextFeaturesBtn = document.getElementById('next-features');
+
+    // Tab Elements
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // Current editing state
+    let currentEditingRace = null;
+    let currentSections = {};
+
+    // Initialize
+    renderRaceSlots();
+    updateStatsDisplay();
+    updateBaseStatInputs();
+
+    // Tab Switching
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+      });
+    });
+
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark-mode');
+      const icon = themeToggle.querySelector('i');
+      if (document.body.classList.contains('dark-mode')) {
+        icon.classList.replace('fa-moon', 'fa-sun');
+      } else {
+        icon.classList.replace('fa-sun', 'fa-moon');
+      }
+    });
+
+    // Update Base Stats
+    updateStatsBtn.addEventListener('click', updateBaseStatsFromInputs);
+
+    function updateBaseStatsFromInputs() {
+      for (const stat in baseStatInputs) {
+        const value = parseInt(baseStatInputs[stat].value);
+        if (!isNaN(value)) {
+          baseStats[stat] = value;
+        }
+      }
+      updateStatsDisplay();
+    }
+
+    function updateBaseStatInputs() {
+      for (const stat in baseStatInputs) {
+        baseStatInputs[stat].value = baseStats[stat];
+      }
+    }
+
+    // Exponential modifier calculation centered around 5
+    function calculateModifier(statValue) {
+      const base = 1.5; // Growth factor (higher = steeper curve)
+      const center = 5; // Center point where modifier = 0
+      
+      // Calculate difference from center
+      const diff = statValue - center;
+      
+      // Apply exponential formula with sign preservation
+      if (diff === 0) return 0;
+      const modifier = Math.sign(diff) * Math.pow(base, Math.abs(diff)) - 1;
+      
+      // Round to nearest integer
+      return Math.round(modifier);
+    }
+
+    function calculateSize(sizeValue) {
+      // Ensure size is always at least 0.1m
+      sizeValue = Math.max(1, sizeValue);
+      // Linear growth - 1.50m at size 5, 0.10m per point difference
+      const baseSize = 1.50; // meters at size 5
+      const sizePerPoint = 0.10; // meters change per size point
+      const sizeInMeters = baseSize + (sizeValue - 5) * sizePerPoint;
+      return Math.max(0.1, sizeInMeters).toFixed(2) + "m";
+    }
+
+    // --- Race Slot Management ---
+    function renderRaceSlots() {
+      raceSlotsContainer.innerHTML = '';
+      const defaultSlot = document.createElement('div');
+      defaultSlot.className = 'race-slot';
+      defaultSlot.innerHTML = `
+        <select class="race-dropdown">
+          ${Object.keys(raceModifiers).map(race => `
+            <option value="${race}">${race}</option>
+          `).join('')}
+        </select>
+        <button class="remove-race"><i class="fas fa-times"></i></button>
+      `;
+      raceSlotsContainer.appendChild(defaultSlot);
+      addRaceSlotListeners(defaultSlot);
+    }
+
+    function addRaceSlotListeners(slot) {
+      const dropdown = slot.querySelector('.race-dropdown');
+      const removeBtn = slot.querySelector('.remove-race');
+      
+      dropdown.addEventListener('change', () => {
+        updateExtraTraitsUI();
+        updateStatsDisplay();
+      });
+      
+      removeBtn.addEventListener('click', () => {
+        slot.remove();
+        updateExtraTraitsUI();
+        updateStatsDisplay();
+      });
+    }
+
+    addRaceBtn.addEventListener('click', () => {
+      const newSlot = document.createElement('div');
+      newSlot.className = 'race-slot';
+      newSlot.innerHTML = `
+        <select class="race-dropdown">
+          ${Object.keys(raceModifiers).map(race => `
+            <option value="${race}">${race}</option>
+          `).join('')}
+        </select>
+        <button class="remove-race"><i class="fas fa-times"></i></button>
+      `;
+      raceSlotsContainer.appendChild(newSlot);
+      addRaceSlotListeners(newSlot);
+    });
+
+    // --- Extra Traits UI ---
+    function updateExtraTraitsUI() {
+      extraTraitsContainer.innerHTML = '';
+      const raceSlots = document.querySelectorAll('.race-dropdown');
+
+      raceSlots.forEach(slot => {
+        const race = slot.value;
+        const raceData = raceModifiers[race];
+        if (!raceData || !raceData.extraSections) return;
+
+        for (const [sectionName, options] of Object.entries(raceData.extraSections)) {
+          if (!options) continue;
+          
+          const sectionDiv = document.createElement('div');
+          sectionDiv.className = 'extra-section';
+          sectionDiv.innerHTML = `
+            <div class="section-title">
+              <span>${sectionName}:</span>
+              <button class="remove-section" data-race="${race}" data-section="${sectionName}">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <select class="section-option" data-race="${race}" data-section="${sectionName}">
+              ${Object.keys(options).map(opt => `
+                <option value="${opt}">${opt}</option>
+              `).join('')}
+            </select>
+          `;
+          extraTraitsContainer.appendChild(sectionDiv);
+
+          sectionDiv.querySelector('.section-option').addEventListener('change', updateStatsDisplay);
+          sectionDiv.querySelector('.remove-section').addEventListener('click', (e) => {
+            const race = e.target.closest('button').dataset.race;
+            const section = e.target.closest('button').dataset.section;
+            if (raceModifiers[race] && raceModifiers[race].extraSections) {
+              delete raceModifiers[race].extraSections[section];
+              updateExtraTraitsUI();
+              updateStatsDisplay();
+            }
+          });
+        }
+      });
+    }
+
+    // --- Modifier Calculation ---
+    function getCombinedModifiers() {
+      const modifiers = {};
+      const raceSlots = document.querySelectorAll('.race-dropdown');
+
+      raceSlots.forEach(slot => {
+        const race = slot.value;
+        const raceData = raceModifiers[race];
+        if (!raceData) return;
+
+        // Add base modifiers
+        for (const [stat, value] of Object.entries(raceData.base || {})) {
+          if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
+        }
+
+        // Add extra sections from this race
+        const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
+        sectionOptions.forEach(select => {
+          const section = select.dataset.section;
+          const option = select.value;
+          
+          const sectionData = raceData.extraSections?.[section] || {};
+          const optionData = sectionData[option] || {};
+          
+          for (const [stat, value] of Object.entries(optionData)) {
+            if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
+          }
+        });
+      });
+
+      return modifiers;
+    }
+
+    function updateStatsDisplay() {
+      const modifiers = getCombinedModifiers();
+      modifierList.innerHTML = '';
+
+      for (const [stat, value] of Object.entries(modifiers)) {
+        const li = document.createElement('li');
+        li.className = 'modifier-item';
+        li.innerHTML = `
+          <span>${stat}: ${value > 0 ? '+' : ''}${value}</span>
+        `;
+        modifierList.appendChild(li);
+      }
+
+      for (const stat in baseStats) {
+        const modifier = modifiers[stat] || 0;
+        const total = baseStats[stat] + modifier;
+        if (statElements[stat]) {
+          const valueSpan = statElements[stat].querySelector('.stat-value');
+          const modSpan = statElements[stat].querySelector('.mod-value');
+          
+          if (valueSpan) {
+            valueSpan.textContent = total;
+          }
+          
+          if (modSpan) {
+            if (stat === 'size') {
+              const sizeSpan = statElements[stat].querySelector('.size-value');
+              if (sizeSpan) {
+                sizeSpan.textContent = calculateSize(total);
+              }
+            } else {
+              const modifierValue = calculateModifier(total);
+              modSpan.textContent = modifierValue > 0 ? '+' + modifierValue : modifierValue;
+            }
+          }
+          
+          statElements[stat].dataset.modifier = modifier !== 0 ? `(${baseStats[stat]} + ${modifier})` : '';
+        }
+      }
+    }
+
+    // --- Race Editor Modal ---
+    modifyRaceBtn.addEventListener('click', () => {
+      const firstRaceDropdown = document.querySelector('.race-dropdown');
+      currentEditingRace = firstRaceDropdown ? firstRaceDropdown.value : null;
+      
+      newRaceNameInput.value = currentEditingRace || '';
+      editorModifierList.innerHTML = '';
+      sectionModifiersContainer.innerHTML = '';
+      currentSections = {};
+
+      // Load existing modifiers if editing
+      if (currentEditingRace && raceModifiers[currentEditingRace]) {
+        const raceData = raceModifiers[currentEditingRace];
+        
+        // Base modifiers
+        for (const [stat, value] of Object.entries(raceData.base || {})) {
+          addModifierToEditor(stat, value);
+        }
+
+        // Extra sections
+        for (const [sectionName, options] of Object.entries(raceData.extraSections || {})) {
+          currentSections[sectionName] = options || {};
+          addSectionToEditor(sectionName, options);
+        }
+      }
+
+      modal.style.display = 'block';
+    });
+
+    closeModal.addEventListener('click', () => {
+      modal.style.display = 'none';
+    });
+
+    // Add modifier in editor
+    addModifierBtn.addEventListener('click', () => {
+      const stat = statSelect.value;
+      const value = parseInt(modifierValueInput.value);
+      if (isNaN(value)) return;
+
+      addModifierToEditor(stat, value);
+      modifierValueInput.value = '';
+    });
+
+    function addModifierToEditor(stat, value) {
+      const li = document.createElement('li');
+      li.className = 'modifier-item';
+      li.innerHTML = `
+        <span>${stat}: ${value}</span>
+        <button class="remove-modifier-btn"><i class="fas fa-times"></i></button>
+      `;
+      editorModifierList.appendChild(li);
+
+      li.querySelector('.remove-modifier-btn').addEventListener('click', () => {
+        li.remove();
+      });
+    }
+
+    // Add section in editor
+    addSectionBtn.addEventListener('click', () => {
+      const sectionName = newSectionNameInput.value.trim();
+      if (!sectionName || currentSections[sectionName]) return;
+
+      currentSections[sectionName] = { "Default Option": {} };
+      addSectionToEditor(sectionName, currentSections[sectionName]);
+      newSectionNameInput.value = '';
+    });
+
+    function addSectionToEditor(sectionName, options) {
+      const sectionDiv = document.createElement('div');
+      sectionDiv.className = 'editor-extra-section';
+      sectionDiv.innerHTML = `
+        <div class="section-header">
+          <div class="section-title">${sectionName}</div>
+          <button class="remove-section-btn" data-section="${sectionName}">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="section-options-container" data-section="${sectionName}"></div>
+        <button class="add-section-option" data-section="${sectionName}">
+          <i class="fas fa-plus"></i> Add Option
+        </button>
+      `;
+      sectionModifiersContainer.appendChild(sectionDiv);
+
+      // Add existing options
+      const optionsContainer = sectionDiv.querySelector('.section-options-container');
+      for (const [optName, modifiers] of Object.entries(options || {})) {
+        addSectionOption(sectionName, optName, modifiers, optionsContainer);
+      }
+
+      // Add option button
+      sectionDiv.querySelector('.add-section-option').addEventListener('click', (e) => {
+        const section = e.target.closest('button').dataset.section;
+        const optName = prompt("Option name (e.g., 50%):");
+        if (optName) {
+          if (!currentSections[section][optName]) {
+            currentSections[section][optName] = {};
+          }
+          addSectionOption(section, optName, currentSections[section][optName], optionsContainer);
+        }
+      });
+
+      // Remove section button
+      sectionDiv.querySelector('.remove-section-btn').addEventListener('click', (e) => {
+        const section = e.target.closest('button').dataset.section;
+        delete currentSections[section];
+        sectionDiv.remove();
+      });
+    }
+
+    function addSectionOption(sectionName, optionName, modifiers, container) {
+      if (!container) {
+        container = document.querySelector(`.section-options-container[data-section="${sectionName}"]`);
+        if (!container) return;
+      }
+
+      const optionDiv = document.createElement('div');
+      optionDiv.className = 'section-option-editor';
+      optionDiv.innerHTML = `
+        <div class="option-header">
+          <div>${optionName}:</div>
+          <button class="remove-option-btn" data-section="${sectionName}" data-option="${optionName}">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="option-modifiers"></div>
+        <div class="modifier-input">
+          <select class="option-stat-select">
+            <option value="strength">Strength</option>
+            <option value="speed">Speed</option>
+            <option value="resistance">Resistance</option>
+            <option value="intelligence">Intelligence</option>
+            <option value="charisma">Charisma</option>
+            <option value="maestry">Maestry</option>
+            <option value="perception">Perception</option>
+            <option value="will">Will</option>
+            <option value="bravery">Bravery</option>
+            <option value="mana">Mana</option>
+            <option value="luck">Luck</option>
+            <option value="stealth">Stealth</option>
+            <option value="size">Size</option>
+          </select>
+          <input type="number" class="option-modifier-value" placeholder="+2">
+          <button class="add-option-modifier" data-section="${sectionName}" data-option="${optionName}">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+      `;
+      container.appendChild(optionDiv);
+
+      // Add existing modifiers
+      const modsContainer = optionDiv.querySelector('.option-modifiers');
+      for (const [stat, value] of Object.entries(modifiers || {})) {
+        addModifierToOption(sectionName, optionName, stat, value, modsContainer);
+      }
+
+      // Add modifier button
+      optionDiv.querySelector('.add-option-modifier').addEventListener('click', (e) => {
+        const section = e.target.closest('button').dataset.section;
+        const option = e.target.closest('button').dataset.option;
+        const statSelect = optionDiv.querySelector('.option-stat-select');
+        const valueInput = optionDiv.querySelector('.option-modifier-value');
+        
+        const stat = statSelect.value;
+        const value = parseInt(valueInput.value);
+        
+        if (!isNaN(value)) {
+          if (!currentSections[section][option]) {
+            currentSections[section][option] = {};
+          }
+          currentSections[section][option][stat] = value;
+          addModifierToOption(section, option, stat, value, modsContainer);
+          valueInput.value = '';
+        }
+      });
+
+      // Remove option button
+      optionDiv.querySelector('.remove-option-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const section = e.target.closest('button').dataset.section;
+        const option = e.target.closest('button').dataset.option;
+        delete currentSections[section][option];
+        optionDiv.remove();
+      });
+    }
+
+    function addModifierToOption(section, option, stat, value, container) {
+      const modDiv = document.createElement('div');
+      modDiv.className = 'modifier-item';
+      modDiv.innerHTML = `
+        <span>${stat}: ${value}</span>
+        <button class="remove-modifier-btn" data-stat="${stat}">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      container.appendChild(modDiv);
+
+      // Remove modifier button
+      modDiv.querySelector('.remove-modifier-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const stat = e.target.closest('button').dataset.stat;
+        delete currentSections[section][option][stat];
+        modDiv.remove();
+      });
+    }
+
+    // Save race
+    saveRaceBtn.addEventListener('click', () => {
+      const name = newRaceNameInput.value.trim();
+      if (!name) return;
+
+      // Get base modifiers
+      const baseModifiers = {};
+      editorModifierList.querySelectorAll('li').forEach(item => {
+        const [stat, value] = item.textContent.split(': ');
+        baseModifiers[stat] = parseInt(value);
+      });
+
+      // Save to raceModifiers
+      raceModifiers[name] = {
+        base: baseModifiers,
+        extraSections: {...currentSections}
+      };
+
+      // Update UI
+      renderRaceSlots();
+      updateExtraTraitsUI();
+      modal.style.display = 'none';
+    });
+
+    // Delete race
+    deleteRaceBtn.addEventListener('click', () => {
+      const name = newRaceNameInput.value.trim();
+      if (name && raceModifiers[name]) {
+        delete raceModifiers[name];
+        renderRaceSlots();
+        updateExtraTraitsUI();
+        modal.style.display = 'none';
+      }
+    });
+
+    // Reset editor
+    resetEditorBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset the editor? All unsaved changes will be lost.')) {
+        newRaceNameInput.value = '';
+        editorModifierList.innerHTML = '';
+        sectionModifiersContainer.innerHTML = '';
+        currentSections = {};
+        currentEditingRace = null;
+      }
+    });
+
+    // Coming Soon Button
+    nextFeaturesBtn.addEventListener('click', () => {
+      alert("What features would you like to see next? Let me know your ideas!");
+    });
+
+    // --- JSON Export/Import ---
+    document.getElementById('export-races').addEventListener('click', () => {
+      const data = JSON.stringify(raceModifiers, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dnd-races.json';
+      a.click();
+    });
+
+    document.getElementById('import-races').addEventListener('click', () => {
+      document.getElementById('import-file').click();
+    });
+
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          raceModifiers = JSON.parse(event.target.result);
+          renderRaceSlots();
+          updateExtraTraitsUI();
+          alert('Races imported successfully!');
+        } catch (error) {
+          alert('Invalid JSON file!');
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // Allow Enter key to add modifiers
+    modifierValueInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addModifierBtn.click();
+      }
+    });
+
+    newSectionNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        addSectionBtn.click();
+      }
+    });
+
+    // Allow Enter key in base stat inputs
+    for (const input of Object.values(baseStatInputs)) {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          updateBaseStatsFromInputs();
+        }
+      });
+    }
+  </script>
+</body>
+</html>
