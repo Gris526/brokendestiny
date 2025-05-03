@@ -746,6 +746,7 @@
         }
       }
       updateStatsDisplay();
+      updateSizeDisplay();
     }
 
     function updateBaseStatInputs() {
@@ -753,10 +754,16 @@
         baseStatInputs[stat].value = baseStats[stat];
       }
     }
+    function updateSizeDisplay() {
+      const sizeElement = document.querySelector('#size .stat-value');
+      const sizeValue = parseInt(sizeElement.textContent, 10);
+      const sizeText = calculateSize(sizeValue);
+      document.querySelector('#size .size-value').textContent = sizeText;
+    }
 
     // Exponential modifier calculation centered around 5
     function calculateModifier(statValue) {
-      const base = 1.5; // Growth factor (higher = steeper curve)
+      const base = 1.2; // Growth factor (higher = steeper curve)
       const center = 5; // Center point where modifier = 0
       
       // Calculate difference from center
@@ -771,8 +778,6 @@
     }
 
     function calculateSize(sizeValue) {
-      // Ensure size is always at least 0.1m
-      sizeValue = Math.max(1, sizeValue);
       // Linear growth - 1.50m at size 5, 0.10m per point difference
       const baseSize = 1.50; // meters at size 5
       const sizePerPoint = 0.10; // meters change per size point
@@ -965,7 +970,7 @@
           addModifierToEditor(stat, value);
         }
 
-        // Extra sections
+                // Extra sections
         for (const [sectionName, options] of Object.entries(raceData.extraSections || {})) {
           currentSections[sectionName] = options || {};
           addSectionToEditor(sectionName, options);
