@@ -394,13 +394,51 @@
         <i class="fas fa-moon"></i>
       </button>
     </div>
-
+    
     <div class="tab-container">
       <div class="tab active" data-tab="stats">Base Stats</div>
       <div class="tab" data-tab="races">Races</div>
+      <div class="tab" data-tab="archetypes">Archetypes</div>
       <div class="tab" data-tab="next">Coming Soon</div>
     </div>
 
+    <div class="tab-content" id="archetypes-tab">
+       <div class="race-selector">
+        <h3><i class="fas fa-chess-queen"></i> Archetype Selection</h3>
+        <div id="archetype-slots">
+          <div class="race-slot">
+            <select class="archetype-dropdown">
+              <option value="warrior">Warrior</option>
+              <option value="mage">Mage</option>
+              <option value="rogue">Rogue</option>
+            </select>
+            <input type="number" class="archetype-level" value="1" min="1" max="100">
+            <button class="remove-race"><i class="fas fa-times"></i></button>
+          </div>
+        </div>
+        <div class="input-group">
+          <button id="add-archetype"><i class="fas fa-plus"></i> Add Archetype</button>
+          <button id="modify-archetype"><i class="fas fa-edit"></i> Modify/Add Archetype</button>
+        </div>
+      </div>
+       <!-- Archetype Subclass Selection -->
+      <div id="archetype-subclass-container" style="margin-top: 20px;">
+        <h4><i class="fas fa-layer-group"></i> Subclass Selection</h4>
+        <div id="subclass-selection"></div>
+      </div>
+
+      <!-- Archetype Level Benefits -->
+      <div id="archetype-benefits-container" style="margin-top: 20px;">
+        <h4><i class="fas fa-level-up-alt"></i> Level Benefits</h4>
+        <div id="archetype-benefits"></div>
+      </div>
+
+      <!-- Archetype Modifiers Display -->
+      <div class="modifiers">
+        <h3><i class="fas fa-bolt"></i> Active Archetype Modifiers</h3>
+        <ul id="archetype-modifier-list"></ul>
+      </div>
+    </div>
     <div class="tab-content active" id="stats-tab">
       <div class="stats-editor">
         <h3><i class="fas fa-sliders-h"></i> Edit Base Stats</h3>
@@ -460,7 +498,7 @@
         </div>
         <button id="update-stats"><i class="fas fa-sync-alt"></i> Update Stats</button>
       </div>
-
+  
       <div class="stats-preview">
         <h3><i class="fas fa-chart-bar"></i> Current Stats & Modifiers</h3>
         <div class="stat" id="strength">Strength: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
