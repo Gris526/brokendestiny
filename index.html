@@ -222,6 +222,20 @@
       padding-left: 7px;
     }
 
+    .permanent-modifier {
+      border-left: 3px solid var(--permanent-color);
+      padding-left: 7px;
+    }
+    
+    .permanent-tag {
+      background-color: var(--permanent-color);
+      color: white;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      margin-left: 5px;
+    }
+
     .remove-race, .remove-section-btn, .remove-option-btn, .remove-modifier-btn {
       background-color: var(--danger-color);
       padding: 8px;
@@ -427,7 +441,6 @@
         </div>
         <div class="input-group">
           <button id="add-archetype"><i class="fas fa-plus"></i> Add Archetype</button>
-          <button id="add-permanent-archetype" class="permanent"><i class="fas fa-lock"></i> Add Permanent Archetype</button>
           <button id="modify-archetype"><i class="fas fa-edit"></i> Modify/Add Archetype</button>
         </div>
       </div>
@@ -443,9 +456,9 @@
         <div id="archetype-benefits"></div>
       </div>
 
-      <!-- Archetype Modifiers Display -->
+      <!-- Archetype Modifiers Display - Now shows all archetype modifiers -->
       <div class="modifiers">
-        <h3><i class="fas fa-bolt"></i> Active Archetype Modifiers</h3>
+        <h3><i class="fas fa-bolt"></i> Archetype Modifiers</h3>
         <ul id="archetype-modifier-list"></ul>
       </div>
     </div>
@@ -537,7 +550,6 @@
         </div>
         <div class="input-group">
           <button id="add-race"><i class="fas fa-plus"></i> Add Race</button>
-          <button id="add-permanent-race" class="permanent"><i class="fas fa-lock"></i> Add Permanent Race</button>
           <button id="modify-race"><i class="fas fa-edit"></i> Modify/Add Race</button>
         </div>
       </div>
@@ -786,7 +798,6 @@
     // DOM Elements
     const raceSlotsContainer = document.getElementById('race-slots');
     const addRaceBtn = document.getElementById('add-race');
-    const addPermanentRaceBtn = document.getElementById('add-permanent-race');
     const modifyRaceBtn = document.getElementById('modify-race');
     const extraTraitsContainer = document.getElementById('extra-traits-container');
     const modifierList = document.getElementById('modifier-list');
@@ -807,7 +818,6 @@
     };
     const archetypeSlotsContainer = document.getElementById('archetype-slots');
     const addArchetypeBtn = document.getElementById('add-archetype');
-    const addPermanentArchetypeBtn = document.getElementById('add-permanent-archetype');
     const modifyArchetypeBtn = document.getElementById('modify-archetype');
     const subclassContainer = document.getElementById('subclass-selection');
     const archetypeBenefitsContainer = document.getElementById('archetype-benefits');
@@ -898,9 +908,9 @@
       addArchetypeSlotListeners(defaultSlot);
     }
 
-    function addArchetypeSlot(isPermanent = false) {
+    function addArchetypeSlot() {
       const newSlot = document.createElement('div');
-      newSlot.className = `race-slot ${isPermanent ? 'permanent' : ''}`;
+      newSlot.className = 'race-slot';
       newSlot.innerHTML = `
         <select class="archetype-dropdown">
           ${Object.keys(archetypeModifiers).map(archetype => `
@@ -908,7 +918,7 @@
           `).join('')}
         </select>
         <input type="number" class="archetype-level" value="1" min="1" max="100">
-        <button class="remove-race" ${isPermanent ? 'disabled style="display:none;"' : ''}><i class="fas fa-times"></i></button>
+        <button class="remove-race"><i class="fas fa-times"></i></button>
       `;
       archetypeSlotsContainer.appendChild(newSlot);
       addArchetypeSlotListeners(newSlot);
@@ -949,6 +959,12 @@
         // Add base modifiers
         Object.entries(archetypeData.base || {}).forEach(([stat, value]) => {
           activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
+          
+          // Add to archetype modifier list
+          const li = document.createElement('li');
+          li.className = 'modifier-item';
+          li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Base</span></span>`;
+          archetypeModifierList.appendChild(li);
         });
         
         // Add level benefits
@@ -956,6 +972,12 @@
         if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
           Object.entries(archetypeData.levelBenefits[applicableLevel]).forEach(([stat, value]) => {
             activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
+            
+            // Add to archetype modifier list
+            const li = document.createElement('li');
+            li.className = 'modifier-item';
+            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Level ${applicableLevel}</span></span>`;
+            archetypeModifierList.appendChild(li);
           });
           
           // Display level benefits
@@ -987,18 +1009,26 @@
           `;
           subclassContainer.appendChild(subclassDiv);
           
-          subclassDiv.querySelector('.subclass-select').addEventListener('change', (e) => {
+          // Set up subclass change listener
+          const subclassSelect = subclassDiv.querySelector('.subclass-select');
+          subclassSelect.addEventListener('change', () => {
             updateArchetypeDisplay();
           });
           
           // Add subclass benefits if selected
-          const selectedSubclass = subclassDiv.querySelector('.subclass-select').value;
+          const selectedSubclass = subclassSelect.value;
           if (selectedSubclass && archetypeData.subclasses[selectedSubclass]) {
             const subclassData = archetypeData.subclasses[selectedSubclass];
             
             // Add base subclass modifiers
             Object.entries(subclassData.base || {}).forEach(([stat, value]) => {
               activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
+              
+              // Add to archetype modifier list
+              const li = document.createElement('li');
+              li.className = 'modifier-item';
+              li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass}</span></span>`;
+              archetypeModifierList.appendChild(li);
             });
             
             // Add subclass level benefits
@@ -1006,6 +1036,12 @@
             if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
               Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).forEach(([stat, value]) => {
                 activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
+                
+                // Add to archetype modifier list
+                const li = document.createElement('li');
+                li.className = 'modifier-item';
+                li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass} Level ${subclassApplicableLevel}</span></span>`;
+                archetypeModifierList.appendChild(li);
               });
               
               // Display subclass benefits
@@ -1023,14 +1059,6 @@
             }
           }
         }
-      });
-      
-      // Display all active archetype modifiers
-      Object.entries(activeModifiers).forEach(([stat, value]) => {
-        const li = document.createElement('li');
-        li.className = 'modifier-item';
-        li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value}</span>`;
-        archetypeModifierList.appendChild(li);
       });
       
       // Update stats display to include archetype modifiers
@@ -1357,16 +1385,16 @@
       addRaceSlotListeners(defaultSlot);
     }
 
-    function addRaceSlot(isPermanent = false) {
+    function addRaceSlot() {
       const newSlot = document.createElement('div');
-      newSlot.className = `race-slot ${isPermanent ? 'permanent' : ''}`;
+      newSlot.className = 'race-slot';
       newSlot.innerHTML = `
         <select class="race-dropdown">
           ${Object.keys(raceModifiers).map(race => `
             <option value="${race}">${race}</option>
           `).join('')}
         </select>
-        <button class="remove-race" ${isPermanent ? 'disabled style="display:none;"' : ''}><i class="fas fa-times"></i></button>
+        <button class="remove-race"><i class="fas fa-times"></i></button>
       `;
       raceSlotsContainer.appendChild(newSlot);
       addRaceSlotListeners(newSlot);
@@ -1836,11 +1864,9 @@
 
       // Race Slot Management
       addRaceBtn.addEventListener('click', () => addRaceSlot(false));
-      addPermanentRaceBtn.addEventListener('click', () => addRaceSlot(true));
 
       // Archetype Slot Management
       addArchetypeBtn.addEventListener('click', () => addArchetypeSlot(false));
-      addPermanentArchetypeBtn.addEventListener('click', () => addArchetypeSlot(true));
 
       // Race Editor
       modifyRaceBtn.addEventListener('click', openRaceEditor);
