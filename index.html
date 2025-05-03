@@ -1540,17 +1540,104 @@
       modifierList.innerHTML = '';
       archetypeModifierList.innerHTML = '';
 
-      for (const [stat, value] of Object.entries(modifiers)) {
-        const li = document.createElement('li');
-        li.className = 'modifier-item';
-        li.innerHTML = `
-          <span>${stat}: ${value > 0 ? '+' : ''}${value}</span>
-        `;
-        modifierList.appendChild(li);
-      }
+      // Clear both modifier lists first
+      modifierList.innerHTML = '';
+      archetypeModifierList.innerHTML = '';
 
+      // Process race modifiers
+      const raceSlots = document.querySelectorAll('.race-dropdown');
+      raceSlots.forEach(slot => {
+        const race = slot.value;
+        const raceData = raceModifiers[race];
+        if (!raceData) return;
+
+        // Add base modifiers to race modifier list
+        Object.entries(raceData.base || {}).forEach(([stat, value]) => {
+          if (value) {
+            const li = document.createElement('li');
+            li.className = 'modifier-item';
+            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Race Base</span></span>`;
+            modifierList.appendChild(li);
+          }
+        });
+
+        // Add extra sections to race modifier list
+        const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
+        sectionOptions.forEach(select => {
+          const section = select.dataset.section;
+          const option = select.value;
+          
+          const sectionData = raceData.extraSections?.[section] || {};
+          const optionData = sectionData[option] || {};
+          
+          Object.entries(optionData).forEach(([stat, value]) => {
+            if (value) {
+              const li = document.createElement('li');
+              li.className = 'modifier-item';
+              li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${section} ${option}</span></span>`;
+              modifierList.appendChild(li);
+            }
+          });
+        });
+      });
+
+      // Process archetype modifiers
+      const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+      archetypeSlots.forEach(slot => {
+        const archetype = slot.value;
+        const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
+        const archetypeData = archetypeModifiers[archetype];
+        if (!archetypeData) return;
+
+        // Add base archetype modifiers to archetype modifier list
+        Object.entries(archetypeData.base || {}).forEach(([stat, value]) => {
+          const li = document.createElement('li');
+          li.className = 'modifier-item';
+          li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Archetype Base</span></span>`;
+          archetypeModifierList.appendChild(li);
+        });
+
+        // Add level benefits to archetype modifier list
+        const applicableLevel = getApplicableLevel(archetypeData.levelBenefits, level);
+        if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
+          Object.entries(archetypeData.levelBenefits[applicableLevel]).forEach(([stat, value]) => {
+            const li = document.createElement('li');
+            li.className = 'modifier-item';
+            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Level ${applicableLevel}</span></span>`;
+            archetypeModifierList.appendChild(li);
+          });
+        }
+
+        // Add subclass benefits if selected
+        const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
+        if (subclassSelect && subclassSelect.value && archetypeData.subclasses[subclassSelect.value]) {
+          const subclassData = archetypeData.subclasses[subclassSelect.value];
+          
+          // Add base subclass modifiers to archetype modifier list
+          Object.entries(subclassData.base || {}).forEach(([stat, value]) => {
+            const li = document.createElement('li');
+            li.className = 'modifier-item';
+            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${subclassSelect.value}</span></span>`;
+            archetypeModifierList.appendChild(li);
+          });
+          
+          // Add subclass level benefits to archetype modifier list
+          const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
+          if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
+            Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).forEach(([stat, value]) => {
+              const li = document.createElement('li');
+              li.className = 'modifier-item';
+              li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${subclassSelect.value} Level ${subclassApplicableLevel}</span></span>`;
+              archetypeModifierList.appendChild(li);
+            });
+          }
+        }
+      });
+
+      // Update stat displays
+      const combinedModifiers = getCombinedModifiers();
       for (const stat in baseStats) {
-        const modifier = modifiers[stat] || 0;
+        const modifier = combinedModifiers[stat] || 0;
         const total = baseStats[stat] + modifier;
         if (statElements[stat]) {
           const valueSpan = statElements[stat].querySelector('.stat-value');
