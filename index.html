@@ -386,14 +386,6 @@
       display: block;
     }
 
-    #next-features {
-      background-color: var(--info-color);
-    }
-
-    #next-features:hover {
-      background-color: var(--info-hover);
-    }
-
     @media (max-width: 768px) {
       .modal-content {
         width: 95%;
@@ -430,7 +422,6 @@
       <div class="tab active" data-tab="stats">Base Stats</div>
       <div class="tab" data-tab="races">Races</div>
       <div class="tab" data-tab="archetypes">Archetypes</div>
-      <div class="tab" data-tab="next">Coming Soon</div>
     </div>
 
     <div class="tab-content" id="archetypes-tab">
@@ -564,36 +555,17 @@
       </div>
     </div>
 
-    <div class="tab-content" id="next-tab">
-      <h3><i class="fas fa-wand-magic-sparkles"></i> Coming Soon</h3>
-      <div class="upcoming-features">
-        <div class="feature-card">
-          <h4><i class="fas fa-user"></i> Classes & Levels</h4>
-          <p>Add character classes with level progression and class features</p>
-        </div>
-        <div class="feature-card">
-          <h4><i class="fas fa-scroll"></i> Skills & Proficiencies</h4>
-          <p>Track skill proficiencies and ability checks</p>
-        </div>
-        <div class="feature-card">
-          <h4><i class="fas fa-sack-dollar"></i> Inventory System</h4>
-          <p>Manage equipment, weapons, armor, and treasure</p>
-        </div>
-        <div class="feature-card">
-          <h4><i class="fas fa-fire"></i> Spells & Abilities</h4>
-          <p>Track known spells and class abilities</p>
-        </div>
-      </div>
-      <button id="next-features"><i class="fas fa-lightbulb"></i> Suggest Features</button>
-    </div>
-
     <!-- JSON Export/Import -->
     <div class="json-tools">
       <h3><i class="fas fa-file-export"></i> Data Management</h3>
       <div class="input-group">
-        <button id="export-races"><i class="fas fa-download"></i> Export Races</button>
-        <button id="import-races"><i class="fas fa-upload"></i> Import Races</button>
+        <button id="export-data"><i class="fas fa-download"></i> Export Data</button>
+        <button id="import-data"><i class="fas fa-upload"></i> Import Data</button>
         <input type="file" id="import-file" accept=".json" style="display: none;">
+      </div>
+      <div class="input-group" style="margin-top: 10px;">
+        <input type="text" id="character-name" placeholder="Character Name">
+        <button id="export-character"><i class="fas fa-user"></i> Export Character</button>
       </div>
     </div>
   </div>
@@ -867,7 +839,12 @@
     const addModifierBtn = document.querySelector('.add-modifier');
     const themeToggle = document.getElementById('theme-toggle');
     const resetEditorBtn = document.getElementById('reset-editor');
-    const nextFeaturesBtn = document.getElementById('next-features');
+    
+    // JSON Tools Elements
+    const exportDataBtn = document.getElementById('export-data');
+    const importDataBtn = document.getElementById('import-data');
+    const exportCharacterBtn = document.getElementById('export-character');
+    const characterNameInput = document.getElementById('character-name');
 
     // Tab Elements
     const tabs = document.querySelectorAll('.tab');
@@ -889,6 +866,142 @@
       // Set up event listeners
       setupEventListeners();
     });
+
+    // --- Export/Import Functions ---
+    function exportAllData() {
+      const data = {
+        races: raceModifiers,
+        archetypes: archetypeModifiers,
+        baseStats: baseStats
+      };
+      
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dnd-character-creator-data.json';
+      a.click();
+    }
+
+    function importAllData() {
+      document.getElementById('import-file').click();
+    }
+
+    function handleFileImport(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          
+          if (data.races) raceModifiers = data.races;
+          if (data.archetypes) archetypeModifiers = data.archetypes;
+          if (data.baseStats) baseStats = data.baseStats;
+          
+          renderRaceSlots();
+          renderArchetypeSlots();
+          updateExtraTraitsUI();
+          updateStatsDisplay();
+          updateBaseStatInputs();
+          updateArchetypeDisplay();
+          
+          alert('Data imported successfully!');
+        } catch (error) {
+          alert('Invalid JSON file!');
+          console.error(error);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCharacter() {
+      const characterName = document.getElementById('character-name').value.trim() || 'Unnamed Character';
+      
+      // Get selected races and their options
+      const selectedRaces = [];
+      const raceSlots = document.querySelectorAll('.race-slot');
+      raceSlots.forEach(slot => {
+        const race = slot.querySelector('.race-dropdown').value;
+        const raceData = raceModifiers[race];
+        if (!raceData) return;
+        
+        const raceInfo = {
+          name: race,
+          baseModifiers: {...raceData.base}
+        };
+        
+        // Add extra sections
+        const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
+        if (sectionOptions.length > 0) {
+          raceInfo.extraSections = {};
+          sectionOptions.forEach(select => {
+            const section = select.dataset.section;
+            const option = select.value;
+            raceInfo.extraSections[section] = option;
+          });
+        }
+        
+        selectedRaces.push(raceInfo);
+      });
+      
+      // Get selected archetypes, levels, and subclasses
+      const selectedArchetypes = [];
+      const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+      archetypeSlots.forEach(slot => {
+        const archetype = slot.value;
+        const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
+        const archetypeData = archetypeModifiers[archetype];
+        if (!archetypeData) return;
+        
+        const archetypeInfo = {
+          name: archetype,
+          level: level,
+          baseModifiers: {...archetypeData.base}
+        };
+        
+        // Add subclass if selected
+        const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
+        if (subclassSelect && subclassSelect.value) {
+          archetypeInfo.subclass = subclassSelect.value;
+        }
+        
+        selectedArchetypes.push(archetypeInfo);
+      });
+      
+      // Get current stats with modifiers
+      const currentStats = {};
+      for (const stat in baseStats) {
+        currentStats[stat] = {
+          base: baseStats[stat],
+          modifier: getCombinedModifiers()[stat] || 0,
+          total: baseStats[stat] + (getCombinedModifiers()[stat] || 0)
+        };
+      }
+      
+      // Create character object
+      const character = {
+        name: characterName,
+        baseStats: baseStats,
+        currentStats: currentStats,
+        races: selectedRaces,
+        archetypes: selectedArchetypes,
+        modifiers: getCombinedModifiers(),
+        size: calculateSize(currentStats.size.total),
+        timestamp: new Date().toISOString()
+      };
+      
+      // Export as JSON
+      const json = JSON.stringify(character, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${characterName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_character.json`;
+      a.click();
+    }
 
     // --- Archetype Functions ---
     function renderArchetypeSlots() {
@@ -1990,11 +2103,6 @@
       // Reset editor
       resetEditorBtn.addEventListener('click', resetEditor);
 
-      // Coming Soon Button
-      nextFeaturesBtn.addEventListener('click', () => {
-        alert("What features would you like to see next? Let me know your ideas!");
-      });
-
       // Archetype Editor
       modifyArchetypeBtn.addEventListener('click', openArchetypeEditor);
       document.querySelector('#archetype-editor-modal .close').addEventListener('click', () => {
@@ -2006,37 +2114,10 @@
       addLevelSectionBtn.addEventListener('click', addLevelSection);
 
       // JSON Export/Import
-      document.getElementById('export-races').addEventListener('click', () => {
-        const data = JSON.stringify(raceModifiers, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'dnd-races.json';
-        a.click();
-      });
-
-      document.getElementById('import-races').addEventListener('click', () => {
-        document.getElementById('import-file').click();
-      });
-
-      document.getElementById('import-file').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            raceModifiers = JSON.parse(event.target.result);
-            renderRaceSlots();
-            updateExtraTraitsUI();
-            alert('Races imported successfully!');
-          } catch (error) {
-            alert('Invalid JSON file!');
-          }
-        };
-        reader.readAsText(file);
-      });
+      exportDataBtn.addEventListener('click', exportAllData);
+      importDataBtn.addEventListener('click', importAllData);
+      exportCharacterBtn.addEventListener('click', exportCharacter);
+      document.getElementById('import-file').addEventListener('change', handleFileImport);
 
       // Allow Enter key to add modifiers
       modifierValueInput.addEventListener('keypress', (e) => {
