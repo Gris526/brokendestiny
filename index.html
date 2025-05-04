@@ -918,90 +918,103 @@
     }
 
     function exportCharacter() {
-      const characterName = document.getElementById('character-name').value.trim() || 'Unnamed Character';
-      
-      // Get selected races and their options
-      const selectedRaces = [];
-      const raceSlots = document.querySelectorAll('.race-slot');
-      raceSlots.forEach(slot => {
-        const race = slot.querySelector('.race-dropdown').value;
-        const raceData = raceModifiers[race];
-        if (!raceData) return;
-        
-        const raceInfo = {
-          name: race,
-          baseModifiers: {...raceData.base}
-        };
-        
-        // Add extra sections
-        const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
-        if (sectionOptions.length > 0) {
-          raceInfo.extraSections = {};
-          sectionOptions.forEach(select => {
-            const section = select.dataset.section;
-            const option = select.value;
-            raceInfo.extraSections[section] = option;
-          });
-        }
-        
-        selectedRaces.push(raceInfo);
+  const characterName = document.getElementById('character-name').value.trim() || 'Unnamed Character';
+  
+  // Get selected races and their options
+  const selectedRaces = [];
+  const raceSlots = document.querySelectorAll('.race-slot');
+  raceSlots.forEach(slot => {
+    const race = slot.querySelector('.race-dropdown').value;
+    const raceData = raceModifiers[race];
+    if (!raceData) return;
+    
+    const raceInfo = {
+      name: race,
+      baseModifiers: {...raceData.base}
+    };
+    
+    // Add extra sections
+    const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
+    if (sectionOptions.length > 0) {
+      raceInfo.extraSections = {};
+      sectionOptions.forEach(select => {
+        const section = select.dataset.section;
+        const option = select.value;
+        raceInfo.extraSections[section] = option;
       });
-      
-      // Get selected archetypes, levels, and subclasses
-      const selectedArchetypes = [];
-      const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
-      archetypeSlots.forEach(slot => {
-        const archetype = slot.value;
-        const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
-        const archetypeData = archetypeModifiers[archetype];
-        if (!archetypeData) return;
-        
-        const archetypeInfo = {
-          name: archetype,
-          level: level,
-          baseModifiers: {...archetypeData.base}
-        };
-        
-        // Add subclass if selected
-        const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
-        if (subclassSelect && subclassSelect.value) {
-          archetypeInfo.subclass = subclassSelect.value;
-        }
-        
-        selectedArchetypes.push(archetypeInfo);
-      });
-      
-      // Get current stats with modifiers
-      const currentStats = {};
-      for (const stat in baseStats) {
-        currentStats[stat] = {
-          base: baseStats[stat],
-          modifier: getCombinedModifiers()[stat] || 0,
-          total: baseStats[stat] + (getCombinedModifiers()[stat] || 0)
-        };
-      }
-      
-      // Create character object
-      const character = {
-        name: characterName,
-        baseStats: baseStats,
-        currentStats: currentStats,
-        races: selectedRaces,
-        archetypes: selectedArchetypes,
-        modifiers: getCombinedModifiers(),
-        size: calculateSize(currentStats.size.total),
-        timestamp: new Date().toISOString()
-      };
-      
-      // Export as JSON
-      const json = JSON.stringify(character, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${characterName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_character.json`;
-      a.click();
     }
+    
+    selectedRaces.push(raceInfo);
+  });
+  
+  // Get selected archetypes, levels, and subclasses
+  const selectedArchetypes = [];
+  const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+  archetypeSlots.forEach(slot => {
+    const archetype = slot.value;
+    const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
+    const archetypeData = archetypeModifiers[archetype];
+    if (!archetypeData) return;
+    
+    const archetypeInfo = {
+      name: archetype,
+      level: level,
+      baseModifiers: {...archetypeData.base}
+    };
+    
+    // Add subclass if selected
+    const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
+    if (subclassSelect && subclassSelect.value) {
+      archetypeInfo.subclass = subclassSelect.value;
+      const subclassData = archetypeData.subclasses[subclassSelect.value];
+      if (subclassData) {
+        archetypeInfo.subclassModifiers = {...subclassData.base};
+        
+        // Add subclass level benefits
+        const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
+        if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
+          archetypeInfo.subclassLevelBenefits = {
+            level: subclassApplicableLevel,
+            modifiers: {...subclassData.levelBenefits[subclassApplicableLevel]}
+          };
+        }
+      }
+    }
+    
+    selectedArchetypes.push(archetypeInfo);
+  });
+  
+  // Get current stats with modifiers
+  const currentStats = {};
+  for (const stat in baseStats) {
+    currentStats[stat] = {
+      base: baseStats[stat],
+      modifier: getCombinedModifiers()[stat] || 0,
+      total: baseStats[stat] + (getCombinedModifiers()[stat] || 0)
+    };
+  }
+  
+  // Create character object
+  const character = {
+    name: characterName,
+    baseStats: baseStats,
+    currentStats: currentStats,
+    races: selectedRaces,
+    archetypes: selectedArchetypes,
+    modifiers: getCombinedModifiers(),
+    size: calculateSize(currentStats.size.total),
+    timestamp: new Date().toISOString()
+  };
+  
+  // Export as JSON
+  const json = JSON.stringify(character, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${characterName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_character.json`;
+  a.click();
+}
 
     // --- Archetype Functions ---
     function renderArchetypeSlots() {
@@ -1054,129 +1067,124 @@
     }
 
     function updateArchetypeDisplay() {
-      subclassContainer.innerHTML = '';
-      archetypeBenefitsContainer.innerHTML = '';
-      archetypeModifierList.innerHTML = '';
+  subclassContainer.innerHTML = '';
+  archetypeBenefitsContainer.innerHTML = '';
+  archetypeModifierList.innerHTML = '';
+  
+  const activeModifiers = {};
+  const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+  
+  archetypeSlots.forEach(dropdown => {
+    const slot = dropdown.closest('.race-slot');
+    const archetype = dropdown.value;
+    const level = parseInt(slot.querySelector('.archetype-level')?.value) || 1;
+    
+    if (!archetype || !archetypeModifiers[archetype]) return;
+    
+    const archetypeData = archetypeModifiers[archetype];
+    
+    // Add base modifiers
+    Object.entries(archetypeData.base || {}).forEach(([stat, value]) => {
+      activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
       
-      const activeModifiers = {};
-      const archetypeSlots = document.querySelectorAll('.race-slot');
+      const li = document.createElement('li');
+      li.className = 'modifier-item';
+      li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Base</span></span>`;
+      archetypeModifierList.appendChild(li);
+    });
+    
+    // Add level benefits
+    const applicableLevel = getApplicableLevel(archetypeData.levelBenefits, level);
+    if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
+      Object.entries(archetypeData.levelBenefits[applicableLevel]).forEach(([stat, value]) => {
+        activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
+        
+        const li = document.createElement('li');
+        li.className = 'modifier-item';
+        li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Level ${applicableLevel}</span></span>`;
+        archetypeModifierList.appendChild(li);
+      });
       
-      archetypeSlots.forEach(slot => {
-        const archetype = slot.querySelector('.archetype-dropdown')?.value;
-        const level = parseInt(slot.querySelector('.archetype-level')?.value) || 1;
+      const benefitsDiv = document.createElement('div');
+      benefitsDiv.className = 'extra-section';
+      benefitsDiv.innerHTML = `
+        <div class="section-title">${archetype} Level ${applicableLevel} Benefits</div>
+        <ul>
+          ${Object.entries(archetypeData.levelBenefits[applicableLevel]).map(([stat, value]) => `
+            <li>${stat}: ${value > 0 ? '+' : ''}${value}</li>
+          `).join('')}
+        </ul>
+      `;
+      archetypeBenefitsContainer.appendChild(benefitsDiv);
+    }
+    
+    // Add subclass selection
+    if (Object.keys(archetypeData.subclasses || {}).length > 0) {
+      const subclassDiv = document.createElement('div');
+      subclassDiv.className = 'extra-section';
+      subclassDiv.innerHTML = `
+        <div class="section-title">${archetype} Subclass</div>
+        <select class="subclass-select" data-archetype="${archetype}">
+          <option value="">None</option>
+          ${Object.keys(archetypeData.subclasses).map(subclass => `
+            <option value="${subclass}">${subclass}</option>
+          `).join('')}
+        </select>
+      `;
+      subclassContainer.appendChild(subclassDiv);
+      
+      // Set up subclass change listener
+      const subclassSelect = subclassDiv.querySelector('.subclass-select');
+      subclassSelect.addEventListener('change', () => {
+        updateArchetypeDisplay();
+      });
+      
+      // Add subclass benefits if selected
+      const selectedSubclass = subclassSelect.value;
+      if (selectedSubclass && archetypeData.subclasses[selectedSubclass]) {
+        const subclassData = archetypeData.subclasses[selectedSubclass];
         
-        if (!archetype || !archetypeModifiers[archetype]) return;
-        
-        const archetypeData = archetypeModifiers[archetype];
-        
-        // Add base modifiers
-        Object.entries(archetypeData.base || {}).forEach(([stat, value]) => {
+        // Add base subclass modifiers
+        Object.entries(subclassData.base || {}).forEach(([stat, value]) => {
           activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
           
-          // Add to archetype modifier list
           const li = document.createElement('li');
           li.className = 'modifier-item';
-          li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Base</span></span>`;
+          li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass}</span></span>`;
           archetypeModifierList.appendChild(li);
         });
         
-        // Add level benefits
-        const applicableLevel = getApplicableLevel(archetypeData.levelBenefits, level);
-        if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
-          Object.entries(archetypeData.levelBenefits[applicableLevel]).forEach(([stat, value]) => {
+        // Add subclass level benefits
+        const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
+        if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
+          Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).forEach(([stat, value]) => {
             activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
             
-            // Add to archetype modifier list
             const li = document.createElement('li');
             li.className = 'modifier-item';
-            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">Level ${applicableLevel}</span></span>`;
+            li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass} Level ${subclassApplicableLevel}</span></span>`;
             archetypeModifierList.appendChild(li);
           });
           
-          // Display level benefits
-          const benefitsDiv = document.createElement('div');
-          benefitsDiv.className = 'extra-section';
-          benefitsDiv.innerHTML = `
-            <div class="section-title">${archetype} Level ${applicableLevel} Benefits</div>
+          const subclassBenefitsDiv = document.createElement('div');
+          subclassBenefitsDiv.className = 'extra-section';
+          subclassBenefitsDiv.innerHTML = `
+            <div class="section-title">${selectedSubclass} Level ${subclassApplicableLevel} Benefits</div>
             <ul>
-              ${Object.entries(archetypeData.levelBenefits[applicableLevel]).map(([stat, value]) => `
+              ${Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).map(([stat, value]) => `
                 <li>${stat}: ${value > 0 ? '+' : ''}${value}</li>
               `).join('')}
             </ul>
           `;
-          archetypeBenefitsContainer.appendChild(benefitsDiv);
+          archetypeBenefitsContainer.appendChild(subclassBenefitsDiv);
         }
-        
-        // Add subclass selection
-        if (Object.keys(archetypeData.subclasses || {}).length > 0) {
-          const subclassDiv = document.createElement('div');
-          subclassDiv.className = 'extra-section';
-          subclassDiv.innerHTML = `
-            <div class="section-title">${archetype} Subclass</div>
-            <select class="subclass-select" data-archetype="${archetype}">
-              <option value="">None</option>
-              ${Object.keys(archetypeData.subclasses).map(subclass => `
-                <option value="${subclass}">${subclass}</option>
-              `).join('')}
-            </select>
-          `;
-          subclassContainer.appendChild(subclassDiv);
-          
-          // Set up subclass change listener
-          const subclassSelect = subclassDiv.querySelector('.subclass-select');
-          subclassSelect.addEventListener('change', () => {
-            updateArchetypeDisplay();
-          });
-          
-          // Add subclass benefits if selected
-          const selectedSubclass = subclassSelect.value;
-          if (selectedSubclass && archetypeData.subclasses[selectedSubclass]) {
-            const subclassData = archetypeData.subclasses[selectedSubclass];
-            
-            // Add base subclass modifiers
-            Object.entries(subclassData.base || {}).forEach(([stat, value]) => {
-              activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
-              
-              // Add to archetype modifier list
-              const li = document.createElement('li');
-              li.className = 'modifier-item';
-              li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass}</span></span>`;
-              archetypeModifierList.appendChild(li);
-            });
-            
-            // Add subclass level benefits
-            const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
-            if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
-              Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).forEach(([stat, value]) => {
-                activeModifiers[stat] = (activeModifiers[stat] || 0) + value;
-                
-                // Add to archetype modifier list
-                const li = document.createElement('li');
-                li.className = 'modifier-item';
-                li.innerHTML = `<span>${stat}: ${value > 0 ? '+' : ''}${value} <span class="permanent-tag">${selectedSubclass} Level ${subclassApplicableLevel}</span></span>`;
-                archetypeModifierList.appendChild(li);
-              });
-              
-              // Display subclass benefits
-              const subclassBenefitsDiv = document.createElement('div');
-              subclassBenefitsDiv.className = 'extra-section';
-              subclassBenefitsDiv.innerHTML = `
-                <div class="section-title">${selectedSubclass} Level ${subclassApplicableLevel} Benefits</div>
-                <ul>
-                  ${Object.entries(subclassData.levelBenefits[subclassApplicableLevel]).map(([stat, value]) => `
-                    <li>${stat}: ${value > 0 ? '+' : ''}${value}</li>
-                  `).join('')}
-                </ul>
-              `;
-              archetypeBenefitsContainer.appendChild(subclassBenefitsDiv);
-            }
-          }
-        }
-      });
-      
-      // Update stats display to include archetype modifiers
-      updateStatsDisplay();
+      }
     }
+  });
+  
+  // Update stats display to include archetype modifiers
+  updateStatsDisplay();
+}
 
     function getApplicableLevel(levelBenefits, currentLevel) {
       if (!levelBenefits) return null;
@@ -1575,78 +1583,78 @@
     }
 
     function getCombinedModifiers() {
-      const modifiers = {};
-      const raceSlots = document.querySelectorAll('.race-dropdown');
-      const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
+  const modifiers = {};
+  const raceSlots = document.querySelectorAll('.race-dropdown');
+  const archetypeSlots = document.querySelectorAll('.archetype-dropdown');
 
-      // Add race modifiers
-      raceSlots.forEach(slot => {
-        const race = slot.value;
-        const raceData = raceModifiers[race];
-        if (!raceData) return;
+  // Add race modifiers
+  raceSlots.forEach(slot => {
+    const race = slot.value;
+    const raceData = raceModifiers[race];
+    if (!raceData) return;
 
-        // Add base modifiers
-        for (const [stat, value] of Object.entries(raceData.base || {})) {
-          if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
-        }
+    // Add base modifiers
+    for (const [stat, value] of Object.entries(raceData.base || {})) {
+      if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
+    }
 
-        // Add extra sections from this race
-        const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
-        sectionOptions.forEach(select => {
-          const section = select.dataset.section;
-          const option = select.value;
-          
-          const sectionData = raceData.extraSections?.[section] || {};
-          const optionData = sectionData[option] || {};
-          
-          for (const [stat, value] of Object.entries(optionData)) {
-            if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
-          }
-        });
-      });
+    // Add extra sections from this race
+    const sectionOptions = extraTraitsContainer.querySelectorAll(`.section-option[data-race="${race}"]`);
+    sectionOptions.forEach(select => {
+      const section = select.dataset.section;
+      const option = select.value;
+      
+      const sectionData = raceData.extraSections?.[section] || {};
+      const optionData = sectionData[option] || {};
+      
+      for (const [stat, value] of Object.entries(optionData)) {
+        if (value) modifiers[stat] = (modifiers[stat] || 0) + value;
+      }
+    });
+  });
 
-      // Add archetype modifiers
-      archetypeSlots.forEach(slot => {
-        const archetype = slot.value;
-        const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
-        const archetypeData = archetypeModifiers[archetype];
-        if (!archetypeData) return;
+  // Add archetype modifiers
+  archetypeSlots.forEach(slot => {
+    const archetype = slot.value;
+    const level = parseInt(slot.closest('.race-slot').querySelector('.archetype-level').value) || 1;
+    const archetypeData = archetypeModifiers[archetype];
+    if (!archetypeData) return;
 
-        // Add base archetype modifiers
-        for (const [stat, value] of Object.entries(archetypeData.base || {})) {
+    // Add base archetype modifiers
+    for (const [stat, value] of Object.entries(archetypeData.base || {})) {
+      modifiers[stat] = (modifiers[stat] || 0) + value;
+    }
+
+    // Add level benefits
+    const applicableLevel = getApplicableLevel(archetypeData.levelBenefits, level);
+    if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
+      for (const [stat, value] of Object.entries(archetypeData.levelBenefits[applicableLevel])) {
+        modifiers[stat] = (modifiers[stat] || 0) + value;
+      }
+    }
+
+    // Add subclass benefits if selected
+    const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
+    if (subclassSelect && subclassSelect.value && archetypeData.subclasses[subclassSelect.value]) {
+      const subclassData = archetypeData.subclasses[subclassSelect.value];
+      
+      // Add base subclass modifiers
+      for (const [stat, value] of Object.entries(subclassData.base || {})) {
+        modifiers[stat] = (modifiers[stat] || 0) + value;
+      }
+      
+      // Add subclass level benefits
+      const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
+      if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
+        for (const [stat, value] of Object.entries(subclassData.levelBenefits[subclassApplicableLevel])) {
           modifiers[stat] = (modifiers[stat] || 0) + value;
         }
-
-        // Add level benefits
-        const applicableLevel = getApplicableLevel(archetypeData.levelBenefits, level);
-        if (applicableLevel && archetypeData.levelBenefits[applicableLevel]) {
-          for (const [stat, value] of Object.entries(archetypeData.levelBenefits[applicableLevel])) {
-            modifiers[stat] = (modifiers[stat] || 0) + value;
-          }
-        }
-
-        // Add subclass benefits if selected
-        const subclassSelect = document.querySelector(`.subclass-select[data-archetype="${archetype}"]`);
-        if (subclassSelect && subclassSelect.value && archetypeData.subclasses[subclassSelect.value]) {
-          const subclassData = archetypeData.subclasses[subclassSelect.value];
-          
-          // Add base subclass modifiers
-          for (const [stat, value] of Object.entries(subclassData.base || {})) {
-            modifiers[stat] = (modifiers[stat] || 0) + value;
-          }
-          
-          // Add subclass level benefits
-          const subclassApplicableLevel = getApplicableLevel(subclassData.levelBenefits, level);
-          if (subclassApplicableLevel && subclassData.levelBenefits[subclassApplicableLevel]) {
-            for (const [stat, value] of Object.entries(subclassData.levelBenefits[subclassApplicableLevel])) {
-              modifiers[stat] = (modifiers[stat] || 0) + value;
-            }
-          }
-        }
-      });
-
-      return modifiers;
+      }
     }
+  });
+
+  return modifiers;
+}
 
     function updateStatsDisplay() {
       const modifiers = getCombinedModifiers();
@@ -2113,11 +2121,11 @@
       addSubclassBtn.addEventListener('click', addSubclass);
       addLevelSectionBtn.addEventListener('click', addLevelSection);
 
-      // JSON Export/Import
-      exportDataBtn.addEventListener('click', exportAllData);
-      importDataBtn.addEventListener('click', importAllData);
-      exportCharacterBtn.addEventListener('click', exportCharacter);
-      document.getElementById('import-file').addEventListener('change', handleFileImport);
+       // JSON Export/Import
+  exportDataBtn.addEventListener('click', exportAllData);
+  importDataBtn.addEventListener('click', importAllData);
+  exportCharacterBtn.addEventListener('click', exportCharacter);
+  document.getElementById('import-file').addEventListener('change', handleFileImport);
 
       // Allow Enter key to add modifiers
       modifierValueInput.addEventListener('keypress', (e) => {
