@@ -1067,8 +1067,6 @@
     }
 
     function updateArchetypeDisplay() {
-  const oldSelect = document.querySelector('.subclass-select[data-archetype="' + archetype + '"]');
-  const prev = oldSelect ? oldSelect.value : '';
   subclassContainer.innerHTML = '';
   archetypeBenefitsContainer.innerHTML = '';
   archetypeModifierList.innerHTML = '';
@@ -1120,37 +1118,26 @@
       archetypeBenefitsContainer.appendChild(benefitsDiv);
     }
     
-   // Add subclass selection
-if (Object.keys(archetypeData.subclasses || {}).length > 0) {
-  const subclassDiv = document.createElement('div');
-  subclassDiv.className = 'extra-section';
-  subclassDiv.innerHTML = `
-    <div class="section-title">${archetype} Subclass</div>
-    <select class="subclass-select" data-archetype="${archetype}">
-      <option value="">None</option>
-      ${Object.keys(archetypeData.subclasses).map(subclass => `
-        <option value="${subclass}">${subclass}</option>
-      `).join('')}
-    </select>
-  `;
-  
-  // 1) Append the new DOM
-  subclassContainer.appendChild(subclassDiv);
-
-  // 2) Now grab the <select> you just inserted
-  const subclassSelect = subclassDiv.querySelector('.subclass-select');
-
-  // 3) Re‑apply the old value so it doesn't snap back to None
-  subclassSelect.value = prevSubclass;
-
-  // 4) Re‑attach your change listener
-  subclassSelect.addEventListener('change', () => {
-    updateArchetypeDisplay();
-  });
-
-  // (Then your code to render selectedSubclass benefits follows…)
-}
-
+    // Add subclass selection
+    if (Object.keys(archetypeData.subclasses || {}).length > 0) {
+      const subclassDiv = document.createElement('div');
+      subclassDiv.className = 'extra-section';
+      subclassDiv.innerHTML = `
+        <div class="section-title">${archetype} Subclass</div>
+        <select class="subclass-select" data-archetype="${archetype}">
+          <option value="">None</option>
+          ${Object.keys(archetypeData.subclasses).map(subclass => `
+            <option value="${subclass}">${subclass}</option>
+          `).join('')}
+        </select>
+      `;
+      subclassContainer.appendChild(subclassDiv);
+      
+      // Set up subclass change listener
+      const subclassSelect = subclassDiv.querySelector('.subclass-select');
+      subclassSelect.addEventListener('change', () => {
+        updateArchetypeDisplay();
+      });
       
       // Add subclass benefits if selected
       const selectedSubclass = subclassSelect.value;
