@@ -1067,6 +1067,8 @@
     }
 
     function updateArchetypeDisplay() {
+      const oldSelect = document.querySelector('.subclass-select[data-archetype="' + archetype + '"]');
+  const prev = oldSelect ? oldSelect.value : '';
   subclassContainer.innerHTML = '';
   archetypeBenefitsContainer.innerHTML = '';
   archetypeModifierList.innerHTML = '';
@@ -1131,6 +1133,7 @@
           `).join('')}
         </select>
       `;
+      subclassSelect.value = prevSubclass;
       subclassContainer.appendChild(subclassDiv);
       
       // Set up subclass change listener
