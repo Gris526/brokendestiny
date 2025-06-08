@@ -1,5 +1,4 @@
- <script>
-    // Initialize base stats
+
     let baseStats = {
       strength: 5,
       speed: 5,
@@ -1473,5 +1472,4 @@
         });
       }
     }
-  </script>
 
