@@ -99,6 +99,7 @@
       transform: translateX(-100%);
       transition: transform 0.3s ease;
       z-index: 999;
+      overflow-y: auto;
     }
     .side-menu.open {
       transform: translateX(0);
@@ -107,6 +108,26 @@
       width: 100%;
       margin-bottom: 0.5rem;
       padding: 0.5rem;
+    }
+    .wheel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .wheel-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #e0e0e0;
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+    }
+    .wheel-list-item button {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 0.2rem 0.5rem;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -117,7 +138,8 @@
     <button onclick="exportAllWheels()">2 - Exportar Todo</button>
     <button onclick="importWheels()">3 - Importar</button>
     <button onclick="promptNewWheel()">4 - Nueva Ruleta</button>
-    <button onclick="showWheelList()">5 - Lista de Ruletas</button>
+    <h3>5 - Lista de Ruletas</h3>
+    <div id="wheelList" class="wheel-list"></div>
   </div>
 
   <h1>Mini Decisiones Avanzado</h1>
@@ -135,6 +157,7 @@
       <p id="result"></p>
     </div>
   </div>
+
 <script>
 let options = [];
 let categories = {};
@@ -154,7 +177,14 @@ function promptNewWheel() {
   const name = prompt("Nombre de la nueva ruleta:");
   if (!emoji || !name) return;
   wheels.push({ name, emoji, options: [], categories: {} });
+  updateWheelListUI();
   alert(`Ruleta "${emoji} ${name}" creada.`);
+}
+
+function deleteWheel(index) {
+  if (!confirm("¿Eliminar esta ruleta?")) return;
+  wheels.splice(index, 1);
+  updateWheelListUI();
 }
 
 function exportWheel() {
@@ -189,41 +219,46 @@ function importWheels() {
       const data = JSON.parse(reader.result);
       if (Array.isArray(data)) wheels = wheels.concat(data);
       else wheels.push(data);
+      updateWheelListUI();
       alert('Ruletas importadas.');
     };
     reader.readAsText(file);
   };
   input.click();
 }
+</script>
+<script>
+function updateWheelListUI() {
+  const container = document.getElementById("wheelList");
+  container.innerHTML = "";
+  wheels.forEach((wheel, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-list-item";
+    div.innerHTML = `
+      <span onclick="selectWheel(${i})" style="cursor:pointer;">${wheel.emoji} ${wheel.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>
+    `;
+    container.appendChild(div);
+  });
+}
 
-function showWheelList() {
-  const list = wheels.map((w, i) => `${i + 1}. ${w.emoji} ${w.name}`).join('\n');
-  const sel = prompt("Selecciona ruleta por número:\n" + list);
-  const idx = parseInt(sel) - 1;
-  if (!wheels[idx]) return alert("Inválido");
-  options = wheels[idx].options;
-  categories = wheels[idx].categories;
+function selectWheel(index) {
+  const w = wheels[index];
+  options = JSON.parse(JSON.stringify(w.options));
+  categories = JSON.parse(JSON.stringify(w.categories));
   drawWheel();
   updateOptionsList();
   updateCategoryList();
+  resultEl.textContent = `🎯 ${w.emoji} ${w.name}`;
 }
 
-function getRandomColor() {
-  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-}
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-</script>
-<script>
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
   const lines = input.split("\n");
   let currentCategory = "Default";
   if (!categories[currentCategory])
-    categories[currentCategory] = { color: getRandomColor(), active: true };
+    categories[currentCategory] = { color: getRandomColor(), textColor: "#000000", active: true };
 
   for (let line of lines) {
     line = line.trim();
@@ -231,7 +266,7 @@ function addOptions() {
     if (/^-\w.*-$/.test(line)) {
       currentCategory = line.slice(1, -1).trim();
       if (!categories[currentCategory])
-        categories[currentCategory] = { color: getRandomColor(), active: true };
+        categories[currentCategory] = { color: getRandomColor(), textColor: "#000000", active: true };
       continue;
     }
     const [text, weightStr] = line.split(":");
@@ -261,25 +296,43 @@ function updateCategoryList() {
   const list = document.getElementById("categories");
   list.innerHTML = "";
   for (const cat in categories) {
-    const div = document.createElement("li");
-    div.innerHTML = `
+    const item = document.createElement("li");
+    item.innerHTML = `
       <label>
         <input type="checkbox" ${categories[cat].active ? "checked" : ""} onchange="toggleCategory('${cat}')">
         ${cat}
       </label>
-      <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)" />`;
-    list.appendChild(div);
+      <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)" title="Color de fondo"/>
+      <input type="color" value="${categories[cat].textColor || '#000000'}" onchange="setCategoryTextColor('${cat}', this.value)" title="Color del texto"/>
+      <button onclick="deleteCategory('${cat}')">🗑️</button>
+    `;
+    list.appendChild(item);
   }
 }
 
 function toggleCategory(cat) {
   categories[cat].active = !categories[cat].active;
   drawWheel();
+  updateOptionsList();
 }
 
 function setCategoryColor(cat, color) {
   categories[cat].color = color;
   drawWheel();
+}
+
+function setCategoryTextColor(cat, color) {
+  categories[cat].textColor = color;
+  drawWheel();
+}
+
+function deleteCategory(cat) {
+  if (!confirm(`¿Eliminar categoría "${cat}" y sus opciones?`)) return;
+  options = options.filter(o => o.category !== cat);
+  delete categories[cat];
+  drawWheel();
+  updateOptionsList();
+  updateCategoryList();
 }
 
 function updateWeight(index, value) {
@@ -318,12 +371,11 @@ function drawWheel() {
     ctx.lineWidth = (i === lastWinnerIndex) ? 4 : 1;
     ctx.stroke();
 
-    // Text
     ctx.save();
     ctx.translate(width / 2, height / 2);
     ctx.rotate(start + angle / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = cat.textColor || "#000";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText(o.text, width / 2 - 10, 5);
     ctx.restore();
@@ -331,7 +383,7 @@ function drawWheel() {
     start += angle;
   });
 
-  // Draw fixed pointer
+  // Flecha fija (superior)
   ctx.beginPath();
   ctx.moveTo(width / 2 - 10, 10);
   ctx.lineTo(width / 2 + 10, 10);
@@ -340,7 +392,8 @@ function drawWheel() {
   ctx.fillStyle = "red";
   ctx.fill();
 }
-
+</script>
+<script>
 function spinWheel() {
   const totalWeight = options.reduce((sum, o) => {
     const cat = categories[o.category];
@@ -383,7 +436,7 @@ function spinWheel() {
         }
       }
       highlightWinner(lastWinnerIndex);
-      drawWheel(); // Resalta ganadora
+      drawWheel(); // Redibuja resaltando
     }
   }
   requestAnimationFrame(animate);
@@ -404,6 +457,15 @@ function highlightWinner(index) {
   if (!o) return;
   resultEl.textContent = `🎉 Ganador: ${o.text}`;
 }
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function getRandomColor() {
+  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+}
 </script>
+
 </body>
 </html>
