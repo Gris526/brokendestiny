@@ -3,275 +3,186 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Mini Decisiones Avanzado</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: #fafafa;
-    }
-    h1 {
-      margin-top: 1rem;
-    }
-    .container {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 2rem;
-      justify-content: center;
-      padding: 1rem;
-      width: 100%;
-      max-width: 1200px;
-    }
-    .input-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 320px;
-    }
-    textarea {
-      width: 100%;
-      height: 120px;
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-    canvas {
-      width: 400px;
-      height: 400px;
-      border: 3px solid #333;
-      border-radius: 50%;
-      background-color: #fff;
-    }
-    #options, #categories {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-    #options li {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-    }
-    #options input[type="number"] {
-      width: 60px;
-    }
-    .wheel-panel {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #result {
-      font-weight: bold;
-      margin-top: 1rem;
-      font-size: 1.2rem;
-      color: #222;
-    }
-    #spinButton {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-    }
-    #menu-toggle {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      font-size: 24px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      z-index: 1000;
-    }
-    .side-menu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 250px;
-      height: 100vh;
-      background-color: #f4f4f4;
-      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-      padding: 1rem;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 999;
-      overflow-y: auto;
-    }
-    .side-menu.open {
-      transform: translateX(0);
-    }
-    .side-menu button {
-      width: 100%;
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-    }
-    .wheel-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-    .wheel-list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #e0e0e0;
-      padding: 0.4rem 0.6rem;
-      border-radius: 4px;
-    }
-    .wheel-list-item button {
-      background: #ff4444;
-      color: white;
-      border: none;
-      padding: 0.2rem 0.5rem;
-      cursor: pointer;
-    }
-  </style>
+  <title>Ruleta Pro 🎯</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <button id="menu-toggle" onclick="toggleMenu()">☰</button>
+<body data-theme="light">
+  <!-- Menús -->
+  <button id="menu-toggle">☰</button>
+  <button id="gear-toggle">⚙️</button>
+
+  <!-- Menú lateral izquierdo -->
   <div class="side-menu" id="sideMenu">
-    <button onclick="exportWheel()">1 - Exportar Ruleta</button>
-    <button onclick="exportAllWheels()">2 - Exportar Todo</button>
-    <button onclick="importWheels()">3 - Importar</button>
-    <button onclick="promptNewWheel()">4 - Nueva Ruleta</button>
-    <h3>5 - Lista de Ruletas</h3>
-    <div id="wheelList" class="wheel-list"></div>
+    <h3>🎛 Menú</h3>
+    <button onclick="createNewWheel()">➕ Nueva Ruleta</button>
+    <button onclick="exportWheel()">💾 Exportar Ruleta</button>
+    <button onclick="exportAllWheels()">📦 Exportar Todas</button>
+    <button onclick="importWheels()">📂 Importar</button>
+    <hr/>
+    <h4>📋 Ruletas Guardadas</h4>
+    <div id="wheelList"></div>
   </div>
 
-  <h1>Mini Decisiones Avanzado</h1>
-  <div class="container">
-    <div class="input-panel">
-      <textarea id="optionInput" placeholder="Usa -Nombre- para categorías\nEj: -Saludable-\nEnsalada:2\nPizza:1"></textarea>
+  <!-- Menú engranaje derecho -->
+  <div class="gear-menu" id="gearMenu">
+    <h3>⚙️ Configuración</h3>
+    <label><input type="checkbox" id="darkModeToggle"> 🌙 Modo Oscuro</label><br><br>
+    <label>🎵 Sonido Giro</label><input type="file" onchange="loadSound('spin', this.files[0])"><br>
+    <label>🏆 Sonido Ganador</label><input type="file" onchange="loadSound('win', this.files[0])"><br>
+    <label>🗑 Sonido Borrar</label><input type="file" onchange="loadSound('delete', this.files[0])"><br>
+    <label>➕ Sonido Crear</label><input type="file" onchange="loadSound('create', this.files[0])"><br>
+    <label>🎶 Música Fondo</label><input type="file" onchange="loadMusic(this.files[0])"><br>
+    <button onclick="stopMusic()">⏹️ Detener Música</button>
+  </div>
+
+  <!-- Encabezado -->
+  <div class="header">
+    <input type="text" id="emojiInput" placeholder="🎯" maxlength="2" />
+    <input type="text" id="nameInput" placeholder="Nombre de la Ruleta" />
+    <button onclick="toggleFullscreen()">🖥️ Vista Completa</button>
+  </div>
+  <h1 id="wheelTitle">🎯 Ruleta Pro</h1>
+
+  <!-- Contenido principal -->
+  <div class="main">
+    <!-- Panel izquierdo -->
+    <div class="panel left-panel">
+      <textarea id="optionInput" placeholder="Usa -Categoría-\nEj: -Comida-\nPizza:3\nEnsalada:1"></textarea>
       <button onclick="addOptions()">Agregar Opciones</button>
-      <ul id="options"></ul>
+      <button onclick="clearAll()">🧹 Borrar Todo</button>
       <h4>Categorías</h4>
       <ul id="categories"></ul>
     </div>
-    <div class="wheel-panel">
+
+    <!-- Panel derecho con ruleta -->
+    <div class="panel right-panel">
       <canvas id="wheel" width="400" height="400"></canvas>
-      <button id="spinButton" onclick="spinWheel()">Girar 🎯</button>
+      <button onclick="spinWheel()">🎯 Girar</button>
       <p id="result"></p>
     </div>
   </div>
-
 <script>
 let options = [];
 let categories = {};
 let wheels = [];
 let currentRotation = 0;
 let lastWinnerIndex = -1;
+let sounds = {};
+let music = null;
+
 const canvas = document.getElementById('wheel');
 const ctx = canvas.getContext('2d');
 const resultEl = document.getElementById('result');
 
-function toggleMenu() {
-  document.getElementById('sideMenu').classList.toggle('open');
+const emojiInput = document.getElementById('emojiInput');
+const nameInput = document.getElementById('nameInput');
+const wheelTitle = document.getElementById('wheelTitle');
+
+emojiInput.oninput = updateTitle;
+nameInput.oninput = updateTitle;
+
+function updateTitle() {
+  wheelTitle.textContent = `${emojiInput.value || '🎯'} ${nameInput.value || 'Ruleta Pro'}`;
 }
 
-function promptNewWheel() {
-  const emoji = prompt("Emoji para la nueva ruleta:");
-  const name = prompt("Nombre de la nueva ruleta:");
-  if (!emoji || !name) return;
+function toggleFullscreen() {
+  document.querySelector('.left-panel').classList.toggle('hidden');
+}
+
+document.getElementById('menu-toggle').onclick = () => {
+  document.getElementById('sideMenu').classList.toggle('open');
+};
+
+document.getElementById('gear-toggle').onclick = () => {
+  document.getElementById('gearMenu').classList.toggle('open');
+};
+
+document.getElementById('darkModeToggle').onchange = e => {
+  document.body.dataset.theme = e.target.checked ? 'dark' : 'light';
+};
+
+function playSound(type) {
+  if (sounds[type]) {
+    const s = sounds[type].cloneNode();
+    s.play();
+  }
+}
+
+function loadSound(type, file) {
+  const url = URL.createObjectURL(file);
+  const audio = new Audio(url);
+  sounds[type] = audio;
+}
+
+function loadMusic(file) {
+  if (music) music.pause();
+  music = new Audio(URL.createObjectURL(file));
+  music.loop = true;
+  music.volume = 0.5;
+  music.play();
+}
+
+function stopMusic() {
+  if (music) music.pause();
+}
+
+function createNewWheel() {
+  const name = nameInput.value.trim() || "Ruleta";
+  const emoji = emojiInput.value.trim() || "🎯";
   wheels.push({ name, emoji, options: [], categories: {} });
   updateWheelListUI();
-  alert(`Ruleta "${emoji} ${name}" creada.`);
+  clearAll();
+  playSound("create");
 }
 
-function deleteWheel(index) {
-  if (!confirm("¿Eliminar esta ruleta?")) return;
-  wheels.splice(index, 1);
-  updateWheelListUI();
-}
-
-function exportWheel() {
-  const blob = new Blob([JSON.stringify({ options, categories }, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'rueda.json';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportAllWheels() {
-  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'todas_ruletas.json';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function importWheels() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json';
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const data = JSON.parse(reader.result);
-      if (Array.isArray(data)) wheels = wheels.concat(data);
-      else wheels.push(data);
-      updateWheelListUI();
-      alert('Ruletas importadas.');
-    };
-    reader.readAsText(file);
-  };
-  input.click();
-}
-</script>
-<script>
 function updateWheelListUI() {
-  const container = document.getElementById("wheelList");
+  const container = document.getElementById('wheelList');
   container.innerHTML = "";
-  wheels.forEach((wheel, i) => {
-    const div = document.createElement("div");
-    div.className = "wheel-list-item";
-    div.innerHTML = `
-      <span onclick="selectWheel(${i})" style="cursor:pointer;">${wheel.emoji} ${wheel.name}</span>
-      <button onclick="deleteWheel(${i})">🗑️</button>
-    `;
-    container.appendChild(div);
+  wheels.forEach((w, i) => {
+    const item = document.createElement('div');
+    item.className = "wheel-list-item";
+    item.innerHTML = `
+      <span onclick="loadWheel(${i})" style="cursor:pointer;">${w.emoji} ${w.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>`;
+    container.appendChild(item);
   });
 }
 
-function selectWheel(index) {
-  const w = wheels[index];
+function loadWheel(i) {
+  const w = wheels[i];
+  emojiInput.value = w.emoji;
+  nameInput.value = w.name;
   options = JSON.parse(JSON.stringify(w.options));
   categories = JSON.parse(JSON.stringify(w.categories));
+  updateTitle();
+  updateCategoryList();
   drawWheel();
   updateOptionsList();
-  updateCategoryList();
-  resultEl.textContent = `🎯 ${w.emoji} ${w.name}`;
+}
+
+function deleteWheel(i) {
+  if (confirm("¿Eliminar esta ruleta?")) {
+    wheels.splice(i, 1);
+    updateWheelListUI();
+    playSound("delete");
+  }
 }
 
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
   const lines = input.split("\n");
-  let currentCategory = "Default";
-  if (!categories[currentCategory])
-    categories[currentCategory] = { color: getRandomColor(), textColor: "#000000", active: true };
+  let currentCat = "Default";
+  if (!categories[currentCat]) categories[currentCat] = { color: randomColor(), active: true };
 
-  for (let line of lines) {
-    line = line.trim();
-    if (!line) continue;
+  for (const line of lines) {
     if (/^-\w.*-$/.test(line)) {
-      currentCategory = line.slice(1, -1).trim();
-      if (!categories[currentCategory])
-        categories[currentCategory] = { color: getRandomColor(), textColor: "#000000", active: true };
+      currentCat = line.slice(1, -1).trim();
+      if (!categories[currentCat]) categories[currentCat] = { color: randomColor(), active: true };
       continue;
     }
     const [text, weightStr] = line.split(":");
-    const weight = parseFloat(weightStr) || 1;
-    options.push({ text: text.trim(), weight, category: currentCategory });
+    options.push({ text: text.trim(), weight: parseFloat(weightStr) || 1, category: currentCat });
   }
 
   drawWheel();
@@ -279,193 +190,233 @@ function addOptions() {
   updateCategoryList();
 }
 
+function clearAll() {
+  if (!confirm("¿Borrar todas las opciones?")) return;
+  options = [];
+  categories = {};
+  drawWheel();
+  updateCategoryList();
+  updateOptionsList();
+  playSound("delete");
+}
+
 function updateOptionsList() {
-  const list = document.getElementById("options");
-  list.innerHTML = "";
-  options.forEach((opt, i) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span>${opt.text}</span>
-      <input type="number" value="${opt.weight}" min="1" onchange="updateWeight(${i}, this.value)" />
-      <button onclick="deleteOption(${i})">❌</button>`;
-    list.appendChild(li);
-  });
+  // future expansion: editable list
 }
 
 function updateCategoryList() {
-  const list = document.getElementById("categories");
+  const list = document.getElementById('categories');
   list.innerHTML = "";
-  for (const cat in categories) {
-    const item = document.createElement("li");
-    item.innerHTML = `
-      <label>
-        <input type="checkbox" ${categories[cat].active ? "checked" : ""} onchange="toggleCategory('${cat}')">
-        ${cat}
-      </label>
-      <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)" title="Color de fondo"/>
-      <input type="color" value="${categories[cat].textColor || '#000000'}" onchange="setCategoryTextColor('${cat}', this.value)" title="Color del texto"/>
-      <button onclick="deleteCategory('${cat}')">🗑️</button>
+  for (const c in categories) {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <label><input type="checkbox" ${categories[c].active ? "checked" : ""} onchange="toggleCategory('${c}')"> ${c}</label>
+      <input type="color" value="${categories[c].color}" onchange="changeCategoryColor('${c}', this.value)" />
     `;
-    list.appendChild(item);
+    list.appendChild(li);
   }
 }
 
 function toggleCategory(cat) {
   categories[cat].active = !categories[cat].active;
   drawWheel();
-  updateOptionsList();
 }
 
-function setCategoryColor(cat, color) {
-  categories[cat].color = color;
+function changeCategoryColor(cat, val) {
+  categories[cat].color = val;
   drawWheel();
 }
 
-function setCategoryTextColor(cat, color) {
-  categories[cat].textColor = color;
-  drawWheel();
-}
-
-function deleteCategory(cat) {
-  if (!confirm(`¿Eliminar categoría "${cat}" y sus opciones?`)) return;
-  options = options.filter(o => o.category !== cat);
-  delete categories[cat];
-  drawWheel();
-  updateOptionsList();
-  updateCategoryList();
-}
-
-function updateWeight(index, value) {
-  options[index].weight = Math.max(1, parseFloat(value));
-  drawWheel();
-}
-
-function deleteOption(index) {
-  options.splice(index, 1);
-  drawWheel();
-  updateOptionsList();
-}
-
-function drawWheel() {
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-  const totalWeight = options.reduce((sum, o) => {
-    const cat = categories[o.category];
-    return cat && cat.active ? sum + o.weight : sum;
-  }, 0);
-  if (totalWeight === 0) return;
-
-  let start = 0;
-  options.forEach((o, i) => {
-    const cat = categories[o.category];
-    if (!cat || !cat.active) return;
-
-    const angle = (o.weight / totalWeight) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(width / 2, height / 2);
-    ctx.arc(width / 2, height / 2, width / 2, start, start + angle);
-    ctx.fillStyle = cat.color;
-    ctx.fill();
-    ctx.strokeStyle = (i === lastWinnerIndex) ? "#000" : "#fff";
-    ctx.lineWidth = (i === lastWinnerIndex) ? 4 : 1;
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(width / 2, height / 2);
-    ctx.rotate(start + angle / 2);
-    ctx.textAlign = "right";
-    ctx.fillStyle = cat.textColor || "#000";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText(o.text, width / 2 - 10, 5);
-    ctx.restore();
-
-    start += angle;
-  });
-
-  // Flecha fija (superior)
-  ctx.beginPath();
-  ctx.moveTo(width / 2 - 10, 10);
-  ctx.lineTo(width / 2 + 10, 10);
-  ctx.lineTo(width / 2, 30);
-  ctx.closePath();
-  ctx.fillStyle = "red";
-  ctx.fill();
+function randomColor() {
+  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
 }
 </script>
-<script>
-function spinWheel() {
-  const totalWeight = options.reduce((sum, o) => {
-    const cat = categories[o.category];
-    return cat && cat.active ? sum + o.weight : sum;
-  }, 0);
-  if (totalWeight === 0) return;
+<style>
+:root {
+  --bg: #fdfdfd;
+  --text: #111;
+  --panel: #ffffff;
+  --border: #ccc;
+}
 
-  const angles = [];
-  let acc = 0;
-  for (let o of options) {
-    const cat = categories[o.category];
-    if (!cat || !cat.active) {
-      angles.push(0);
-      continue;
-    }
-    const angle = (o.weight / totalWeight) * 2 * Math.PI;
-    acc += angle;
-    angles.push(acc);
+[data-theme="dark"] {
+  --bg: #121212;
+  --text: #eee;
+  --panel: #1e1e1e;
+  --border: #444;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+button {
+  cursor: pointer;
+}
+
+h1 {
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.header {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 1rem 0 0;
+}
+
+.header input {
+  font-size: 1.2rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.main {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.left-panel {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.left-panel.hidden {
+  display: none;
+}
+
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+textarea {
+  font-size: 1rem;
+  padding: 0.5rem;
+  width: 100%;
+  height: 120px;
+  resize: vertical;
+}
+
+canvas {
+  border-radius: 50%;
+  background: var(--panel);
+  border: 3px solid var(--border);
+}
+
+#result {
+  margin-top: 1rem;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+#categories {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+#categories li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.side-menu,
+.gear-menu {
+  position: fixed;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  box-shadow: -2px 0 6px rgba(0,0,0,0.2);
+  overflow-y: auto;
+  padding: 1rem;
+  z-index: 1000;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.side-menu {
+  left: 0;
+  transform: translateX(-100%);
+}
+.side-menu.open {
+  transform: translateX(0);
+}
+
+.gear-menu {
+  right: 0;
+  transform: translateX(100%);
+}
+.gear-menu.open {
+  transform: translateX(0);
+}
+
+#menu-toggle, #gear-toggle {
+  position: fixed;
+  top: 10px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text);
+  z-index: 1100;
+}
+
+#menu-toggle {
+  left: 10px;
+}
+
+#gear-toggle {
+  right: 10px;
+}
+
+.wheel-list-item {
+  display: flex;
+  justify-content: space-between;
+  background: #ddd;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 4px;
+  border-radius: 4px;
+}
+.wheel-list-item button {
+  background: #ff4444;
+  border: none;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  canvas {
+    width: 300px;
+    height: 300px;
   }
-
-  let duration = 3000;
-  const start = performance.now();
-  const extra = Math.random() * 2 * Math.PI;
-  const rotateStart = currentRotation;
-  const rotateTarget = currentRotation + 10 * Math.PI + extra;
-
-  function animate(time) {
-    const t = Math.min((time - start) / duration, 1);
-    const eased = easeOutCubic(t);
-    currentRotation = rotateStart + (rotateTarget - rotateStart) * eased;
-    drawWheelRotated(currentRotation);
-
-    if (t < 1) requestAnimationFrame(animate);
-    else {
-      let angle = (currentRotation % (2 * Math.PI));
-      for (let i = 0; i < angles.length; i++) {
-        if (angle <= angles[i]) {
-          lastWinnerIndex = i;
-          break;
-        }
-      }
-      highlightWinner(lastWinnerIndex);
-      drawWheel(); // Redibuja resaltando
-    }
-  }
-  requestAnimationFrame(animate);
 }
-
-function drawWheelRotated(angle) {
-  ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(angle);
-  ctx.translate(-canvas.width / 2, -canvas.height / 2);
-  drawWheel();
-  ctx.restore();
-}
-
-function highlightWinner(index) {
-  const o = options[index];
-  if (!o) return;
-  resultEl.textContent = `🎉 Ganador: ${o.text}`;
-}
-
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
-function getRandomColor() {
-  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-}
-</script>
-
-</body>
-</html>
+</style>
