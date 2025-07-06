@@ -4,58 +4,167 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ruleta Pro 🎯</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --bg: #fefefe;
+      --text: #111;
+      --panel: #fff;
+      --border: #ccc;
+    }
+    [data-theme="dark"] {
+      --bg: #121212;
+      --text: #eee;
+      --panel: #1e1e1e;
+      --border: #444;
+    }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+    .header, .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 1rem;
+      gap: 1rem;
+    }
+    h1 {
+      text-align: center;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 8px;
+      min-width: 280px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+    }
+    canvas {
+      background: var(--panel);
+      border-radius: 50%;
+      border: 3px solid var(--border);
+    }
+    #menu-toggle, #gear-toggle {
+      position: fixed;
+      top: 10px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+    #menu-toggle { left: 10px; }
+    #gear-toggle { right: 10px; }
+    .side, .gear {
+      position: fixed;
+      top: 0;
+      width: 260px;
+      height: 100vh;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 1rem;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+    .side.open { transform: translateX(0); }
+    .gear {
+      right: 0;
+      left: auto;
+      transform: translateX(100%);
+    }
+    .gear.open { transform: translateX(0); }
+    .wheel-list-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .wheel-list-item button {
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    .modal-content {
+      background: var(--panel);
+      padding: 1rem;
+      border-radius: 8px;
+      width: 300px;
+    }
+    .modal-content input {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body data-theme="light">
-  <!-- Menús -->
-  <button id="menu-toggle">☰</button>
-  <button id="gear-toggle">⚙️</button>
+  <button id="menu-toggle" onclick="document.getElementById('menu').classList.toggle('open')">☰</button>
+  <button id="gear-toggle" onclick="document.getElementById('gear').classList.toggle('open')">⚙️</button>
 
-  <!-- Menú lateral izquierdo -->
-  <div class="side-menu" id="sideMenu">
-    <h3>🎛 Menú</h3>
-    <button onclick="createNewWheel()">➕ Nueva Ruleta</button>
-    <button onclick="exportWheel()">💾 Exportar Ruleta</button>
-    <button onclick="exportAllWheels()">📦 Exportar Todas</button>
-    <button onclick="importWheels()">📂 Importar</button>
+  <div class="side" id="menu">
+    <h3>📂 Ruletas</h3>
+    <button onclick="openCreateModal()">➕ Nueva</button>
+    <button onclick="exportWheel()">💾 Exportar</button>
+    <button onclick="exportAllWheels()">📦 Exportar Todo</button>
+    <button onclick="importWheels()">📥 Importar</button>
     <hr/>
-    <h4>📋 Ruletas Guardadas</h4>
     <div id="wheelList"></div>
   </div>
 
-  <!-- Menú engranaje derecho -->
-  <div class="gear-menu" id="gearMenu">
-    <h3>⚙️ Configuración</h3>
-    <label><input type="checkbox" id="darkModeToggle"> 🌙 Modo Oscuro</label><br><br>
+  <div class="gear" id="gear">
+    <h3>⚙️ Ajustes</h3>
+    <label><input type="checkbox" id="darkToggle"> 🌙 Modo oscuro</label><br><br>
     <label>🎵 Sonido Giro</label><input type="file" onchange="loadSound('spin', this.files[0])"><br>
-    <label>🏆 Sonido Ganador</label><input type="file" onchange="loadSound('win', this.files[0])"><br>
-    <label>🗑 Sonido Borrar</label><input type="file" onchange="loadSound('delete', this.files[0])"><br>
-    <label>➕ Sonido Crear</label><input type="file" onchange="loadSound('create', this.files[0])"><br>
+    <label>🏆 Sonido Ganar</label><input type="file" onchange="loadSound('win', this.files[0])"><br>
     <label>🎶 Música Fondo</label><input type="file" onchange="loadMusic(this.files[0])"><br>
-    <button onclick="stopMusic()">⏹️ Detener Música</button>
+    <button onclick="stopMusic()">⏹️ Detener música</button>
   </div>
 
-  <!-- Encabezado -->
+  <div class="modal" id="createModal">
+    <div class="modal-content">
+      <h3>➕ Nueva Ruleta</h3>
+      <input id="newEmoji" placeholder="Emoji" maxlength="2">
+      <input id="newName" placeholder="Nombre">
+      <button onclick="createWheel()">Crear</button>
+      <button onclick="closeCreateModal()">Cancelar</button>
+    </div>
+  </div>
+
   <div class="header">
-    <input type="text" id="emojiInput" placeholder="🎯" maxlength="2" />
-    <input type="text" id="nameInput" placeholder="Nombre de la Ruleta" />
-    <button onclick="toggleFullscreen()">🖥️ Vista Completa</button>
+    <input id="emojiInput" placeholder="🎯" maxlength="2">
+    <input id="nameInput" placeholder="Nombre de ruleta">
+    <button onclick="toggleLeft()">🖥️ Vista Completa</button>
   </div>
   <h1 id="wheelTitle">🎯 Ruleta Pro</h1>
 
-  <!-- Contenido principal -->
-  <div class="main">
-    <!-- Panel izquierdo -->
-    <div class="panel left-panel">
-      <textarea id="optionInput" placeholder="Usa -Categoría-\nEj: -Comida-\nPizza:3\nEnsalada:1"></textarea>
+  <div class="container">
+    <div class="panel left" id="leftPanel">
+      <textarea id="optionInput" placeholder="Usa -Categoria- antes de las opciones..."></textarea>
       <button onclick="addOptions()">Agregar Opciones</button>
       <button onclick="clearAll()">🧹 Borrar Todo</button>
-      <h4>Categorías</h4>
       <ul id="categories"></ul>
     </div>
 
-    <!-- Panel derecho con ruleta -->
-    <div class="panel right-panel">
+    <div class="panel">
       <canvas id="wheel" width="400" height="400"></canvas>
       <button onclick="spinWheel()">🎯 Girar</button>
       <p id="result"></p>
@@ -77,35 +186,201 @@ const resultEl = document.getElementById('result');
 const emojiInput = document.getElementById('emojiInput');
 const nameInput = document.getElementById('nameInput');
 const wheelTitle = document.getElementById('wheelTitle');
+emojiInput.oninput = nameInput.oninput = () => {
+  wheelTitle.textContent = `${emojiInput.value || "🎯"} ${nameInput.value || "Ruleta Pro"}`;
+};
 
-emojiInput.oninput = updateTitle;
-nameInput.oninput = updateTitle;
-
-function updateTitle() {
-  wheelTitle.textContent = `${emojiInput.value || '🎯'} ${nameInput.value || 'Ruleta Pro'}`;
+function randomColor() {
+  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
 }
 
-function toggleFullscreen() {
-  document.querySelector('.left-panel').classList.toggle('hidden');
+function openCreateModal() {
+  document.getElementById('createModal').style.display = 'flex';
 }
 
-document.getElementById('menu-toggle').onclick = () => {
-  document.getElementById('sideMenu').classList.toggle('open');
-};
+function closeCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
+}
 
-document.getElementById('gear-toggle').onclick = () => {
-  document.getElementById('gearMenu').classList.toggle('open');
-};
+function createWheel() {
+  const emoji = document.getElementById('newEmoji').value || "🎯";
+  const name = document.getElementById('newName').value || "Ruleta";
+  wheels.push({ name, emoji, options: [], categories: {} });
+  updateWheelList();
+  loadWheel(wheels.length - 1);
+  closeCreateModal();
+}
 
-document.getElementById('darkModeToggle').onchange = e => {
-  document.body.dataset.theme = e.target.checked ? 'dark' : 'light';
-};
+function updateWheelList() {
+  const list = document.getElementById('wheelList');
+  list.innerHTML = "";
+  wheels.forEach((w, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-list-item";
+    div.innerHTML = `
+      <span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>`;
+    list.appendChild(div);
+  });
+}
 
-function playSound(type) {
-  if (sounds[type]) {
-    const s = sounds[type].cloneNode();
-    s.play();
+function loadWheel(index) {
+  const w = wheels[index];
+  emojiInput.value = w.emoji;
+  nameInput.value = w.name;
+  options = JSON.parse(JSON.stringify(w.options));
+  categories = JSON.parse(JSON.stringify(w.categories));
+  emojiInput.dispatchEvent(new Event("input"));
+  drawWheel();
+  updateCategories();
+}
+
+function deleteWheel(i) {
+  if (confirm("¿Eliminar ruleta?")) {
+    wheels.splice(i, 1);
+    updateWheelList();
   }
+}
+
+function addOptions() {
+  const input = document.getElementById('optionInput').value.trim();
+  if (!input) return;
+  const lines = input.split('\n');
+  let currentCategory = "Default";
+  if (!categories[currentCategory]) categories[currentCategory] = { color: randomColor(), active: true };
+
+  for (let line of lines) {
+    if (/^-\w.*-$/.test(line)) {
+      currentCategory = line.slice(1, -1).trim();
+      if (!categories[currentCategory]) categories[currentCategory] = { color: randomColor(), active: true };
+      continue;
+    }
+    const [text, weight] = line.split(':');
+    options.push({ text: text.trim(), weight: parseFloat(weight) || 1, category: currentCategory });
+  }
+
+  drawWheel();
+  updateCategories();
+}
+
+function clearAll() {
+  if (!confirm("¿Borrar todo?")) return;
+  options = [];
+  categories = {};
+  drawWheel();
+  updateCategories();
+}
+
+function updateCategories() {
+  const list = document.getElementById('categories');
+  list.innerHTML = "";
+  for (const cat in categories) {
+    const item = document.createElement("li");
+    item.innerHTML = `
+      <label>
+        <input type="checkbox" ${categories[cat].active ? "checked" : ""} onchange="toggleCategory('${cat}')">
+        ${cat}
+      </label>
+      <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)" />`;
+    list.appendChild(item);
+  }
+}
+
+function toggleCategory(cat) {
+  categories[cat].active = !categories[cat].active;
+  drawWheel();
+}
+
+function setCategoryColor(cat, color) {
+  categories[cat].color = color;
+  drawWheel();
+}
+
+function drawWheel() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const totalWeight = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
+  if (totalWeight === 0) return;
+
+  let start = 0;
+  options.forEach((o, i) => {
+    if (!categories[o.category]?.active) return;
+    const angle = (o.weight / totalWeight) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, start, start + angle);
+    ctx.fillStyle = categories[o.category].color;
+    ctx.fill();
+    if (i === lastWinnerIndex) {
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#000";
+      ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(start + angle / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText(o.text, 180, 0);
+    ctx.restore();
+    start += angle;
+  });
+}
+
+function spinWheel() {
+  const totalWeight = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
+  if (totalWeight === 0) return;
+  let rand = Math.random() * totalWeight;
+  for (let i = 0; i < options.length; i++) {
+    const cat = categories[options[i].category];
+    if (!cat || !cat.active) continue;
+    rand -= options[i].weight;
+    if (rand <= 0) {
+      lastWinnerIndex = i;
+      break;
+    }
+  }
+  drawWheel();
+  resultEl.textContent = `🎉 Ganador: ${options[lastWinnerIndex].text}`;
+  if (sounds.win) sounds.win.cloneNode().play();
+}
+
+function toggleLeft() {
+  document.getElementById("leftPanel").classList.toggle("hidden");
+}
+
+function exportWheel() {
+  const json = JSON.stringify({ name: nameInput.value, emoji: emojiInput.value, options, categories }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = `${emojiInput.value || "ruleta"}.json`;
+  a.click();
+}
+
+function exportAllWheels() {
+  const json = JSON.stringify(wheels, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = `ruletas.json`;
+  a.click();
+}
+
+function importWheels() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = JSON.parse(reader.result);
+      if (Array.isArray(data)) wheels = data;
+      else wheels.push(data);
+      updateWheelList();
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 function loadSound(type, file) {
@@ -118,7 +393,7 @@ function loadMusic(file) {
   if (music) music.pause();
   music = new Audio(URL.createObjectURL(file));
   music.loop = true;
-  music.volume = 0.5;
+  music.volume = 0.4;
   music.play();
 }
 
@@ -126,297 +401,9 @@ function stopMusic() {
   if (music) music.pause();
 }
 
-function createNewWheel() {
-  const name = nameInput.value.trim() || "Ruleta";
-  const emoji = emojiInput.value.trim() || "🎯";
-  wheels.push({ name, emoji, options: [], categories: {} });
-  updateWheelListUI();
-  clearAll();
-  playSound("create");
-}
-
-function updateWheelListUI() {
-  const container = document.getElementById('wheelList');
-  container.innerHTML = "";
-  wheels.forEach((w, i) => {
-    const item = document.createElement('div');
-    item.className = "wheel-list-item";
-    item.innerHTML = `
-      <span onclick="loadWheel(${i})" style="cursor:pointer;">${w.emoji} ${w.name}</span>
-      <button onclick="deleteWheel(${i})">🗑️</button>`;
-    container.appendChild(item);
-  });
-}
-
-function loadWheel(i) {
-  const w = wheels[i];
-  emojiInput.value = w.emoji;
-  nameInput.value = w.name;
-  options = JSON.parse(JSON.stringify(w.options));
-  categories = JSON.parse(JSON.stringify(w.categories));
-  updateTitle();
-  updateCategoryList();
-  drawWheel();
-  updateOptionsList();
-}
-
-function deleteWheel(i) {
-  if (confirm("¿Eliminar esta ruleta?")) {
-    wheels.splice(i, 1);
-    updateWheelListUI();
-    playSound("delete");
-  }
-}
-
-function addOptions() {
-  const input = document.getElementById("optionInput").value.trim();
-  if (!input) return;
-  const lines = input.split("\n");
-  let currentCat = "Default";
-  if (!categories[currentCat]) categories[currentCat] = { color: randomColor(), active: true };
-
-  for (const line of lines) {
-    if (/^-\w.*-$/.test(line)) {
-      currentCat = line.slice(1, -1).trim();
-      if (!categories[currentCat]) categories[currentCat] = { color: randomColor(), active: true };
-      continue;
-    }
-    const [text, weightStr] = line.split(":");
-    options.push({ text: text.trim(), weight: parseFloat(weightStr) || 1, category: currentCat });
-  }
-
-  drawWheel();
-  updateOptionsList();
-  updateCategoryList();
-}
-
-function clearAll() {
-  if (!confirm("¿Borrar todas las opciones?")) return;
-  options = [];
-  categories = {};
-  drawWheel();
-  updateCategoryList();
-  updateOptionsList();
-  playSound("delete");
-}
-
-function updateOptionsList() {
-  // future expansion: editable list
-}
-
-function updateCategoryList() {
-  const list = document.getElementById('categories');
-  list.innerHTML = "";
-  for (const c in categories) {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <label><input type="checkbox" ${categories[c].active ? "checked" : ""} onchange="toggleCategory('${c}')"> ${c}</label>
-      <input type="color" value="${categories[c].color}" onchange="changeCategoryColor('${c}', this.value)" />
-    `;
-    list.appendChild(li);
-  }
-}
-
-function toggleCategory(cat) {
-  categories[cat].active = !categories[cat].active;
-  drawWheel();
-}
-
-function changeCategoryColor(cat, val) {
-  categories[cat].color = val;
-  drawWheel();
-}
-
-function randomColor() {
-  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
-}
+document.getElementById('darkToggle').onchange = (e) => {
+  document.body.dataset.theme = e.target.checked ? 'dark' : 'light';
+};
 </script>
-<style>
-:root {
-  --bg: #fdfdfd;
-  --text: #111;
-  --panel: #ffffff;
-  --border: #ccc;
-}
-
-[data-theme="dark"] {
-  --bg: #121212;
-  --text: #eee;
-  --panel: #1e1e1e;
-  --border: #444;
-}
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Segoe UI', sans-serif;
-  margin: 0;
-  padding: 0;
-  transition: background 0.3s, color 0.3s;
-}
-
-button {
-  cursor: pointer;
-}
-
-h1 {
-  text-align: center;
-  margin: 0.5rem 0;
-}
-
-.header {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  align-items: center;
-  margin: 1rem 0 0;
-}
-
-.header input {
-  font-size: 1.2rem;
-  padding: 0.2rem 0.6rem;
-}
-
-.main {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  padding: 1rem;
-}
-
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.left-panel {
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.left-panel.hidden {
-  display: none;
-}
-
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-textarea {
-  font-size: 1rem;
-  padding: 0.5rem;
-  width: 100%;
-  height: 120px;
-  resize: vertical;
-}
-
-canvas {
-  border-radius: 50%;
-  background: var(--panel);
-  border: 3px solid var(--border);
-}
-
-#result {
-  margin-top: 1rem;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-#categories {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-#categories li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.side-menu,
-.gear-menu {
-  position: fixed;
-  top: 0;
-  width: 260px;
-  height: 100vh;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
-  box-shadow: -2px 0 6px rgba(0,0,0,0.2);
-  overflow-y: auto;
-  padding: 1rem;
-  z-index: 1000;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-}
-
-.side-menu {
-  left: 0;
-  transform: translateX(-100%);
-}
-.side-menu.open {
-  transform: translateX(0);
-}
-
-.gear-menu {
-  right: 0;
-  transform: translateX(100%);
-}
-.gear-menu.open {
-  transform: translateX(0);
-}
-
-#menu-toggle, #gear-toggle {
-  position: fixed;
-  top: 10px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: var(--text);
-  z-index: 1100;
-}
-
-#menu-toggle {
-  left: 10px;
-}
-
-#gear-toggle {
-  right: 10px;
-}
-
-.wheel-list-item {
-  display: flex;
-  justify-content: space-between;
-  background: #ddd;
-  padding: 0.4rem 0.6rem;
-  margin-bottom: 4px;
-  border-radius: 4px;
-}
-.wheel-list-item button {
-  background: #ff4444;
-  border: none;
-  color: white;
-  padding: 0.2rem 0.6rem;
-  cursor: pointer;
-}
-
-@media (max-width: 600px) {
-  canvas {
-    width: 300px;
-    height: 300px;
-  }
-}
-</style>
+</body>
+</html>
