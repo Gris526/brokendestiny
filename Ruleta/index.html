@@ -1,339 +1,236 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ruleta Pro 🎯</title>
   <style>
     :root {
-      --bg: #fefefe;
-      --text: #111;
-      --panel: #fff;
-      --border: #ccc;
+      --bg: #fdfdfd; --text: #111;
+      --panel: #fff; --border: #ccc;
     }
     [data-theme="dark"] {
-      --bg: #121212;
-      --text: #eee;
-      --panel: #1e1e1e;
-      --border: #444;
+      --bg: #121212; --text: #eee;
+      --panel: #1e1e1e; --border: #444;
     }
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      transition: all 0.3s ease;
-    }
-    .header, .container {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      padding: 1rem;
-      gap: 1rem;
-    }
-    h1 {
-      text-align: center;
-    }
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      padding: 1rem;
-      border-radius: 8px;
-      min-width: 280px;
-    }
-    textarea {
-      width: 100%;
-      height: 100px;
-    }
-    canvas {
-      background: var(--panel);
-      border-radius: 50%;
-      border: 3px solid var(--border);
-    }
-    #menu-toggle, #gear-toggle {
-      position: fixed;
-      top: 10px;
-      background: none;
-      border: none;
-      font-size: 24px;
-      cursor: pointer;
-      z-index: 1000;
-    }
-    #menu-toggle { left: 10px; }
-    #gear-toggle { right: 10px; }
-    .side, .gear {
-      position: fixed;
-      top: 0;
-      width: 260px;
-      height: 100vh;
-      background: var(--panel);
-      border-left: 1px solid var(--border);
-      overflow-y: auto;
-      padding: 1rem;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease;
-      z-index: 999;
-    }
-    .side.open { transform: translateX(0); }
-    .gear {
-      right: 0;
-      left: auto;
-      transform: translateX(100%);
-    }
-    .gear.open { transform: translateX(0); }
-    .wheel-list-item {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-    }
-    .wheel-list-item button {
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-    }
-    .modal-content {
-      background: var(--panel);
-      padding: 1rem;
-      border-radius: 8px;
-      width: 300px;
-    }
-    .modal-content input {
-      width: 100%;
-      margin-bottom: 0.5rem;
-    }
-    .hidden {
-      display: none;
-    }
+    html,body { margin:0; padding:0; background:var(--bg); color:var(--text); font-family:sans-serif; transition:0.3s;}
+    .header { display:flex; justify-content:center; align-items:center; gap:0.5rem; padding:1rem;}
+    #menu-toggle, #gear-toggle { position:fixed; top:10px; font-size:24px; background:none; border:none; cursor:pointer; z-index:1000;}
+    #menu-toggle { left:10px; } #gear-toggle { right:10px; }
+    .side, .gear { position:fixed; top:0; height:100vh; width:260px; background:var(--panel); border:1px solid var(--border); overflow:auto; padding:1rem; transform:translateX(-100%); transition:0.3s; z-index:999; }
+    .gear { right:0; left:auto; transform:translateX(100%); }
+    .side.open { transform:translateX(0); } .gear.open { transform:translateX(0); }
+    .side button, .gear button { width:100%; margin-bottom:0.5rem; }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:2000;}
+    .modal-content { background:var(--panel); padding:1rem; border-radius:8px; width:280px;}
+    .modal-content input { width:100%; margin-bottom:0.5rem;}
+    .container { display:flex; gap:1rem; padding:1rem; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:1rem;}
+    textarea { width:100%; height:100px; }
+    #categories { list-style:none; padding:0; margin:0; }
+    #categories li { display:flex; justify-content: space-between; margin-bottom:0.5rem;}
+    canvas { background:var(--panel); border-radius:50%; border:3px solid var(--border);}
+    #result { text-align:center; font-weight:bold; margin-top:0.5rem;}
+    .hidden { display:none!important; }
   </style>
 </head>
 <body data-theme="light">
-  <button id="menu-toggle" onclick="document.getElementById('menu').classList.toggle('open')">☰</button>
-  <button id="gear-toggle" onclick="document.getElementById('gear').classList.toggle('open')">⚙️</button>
 
-  <div class="side" id="menu">
-    <h3>📂 Ruletas</h3>
-    <button onclick="openCreateModal()">➕ Nueva</button>
-    <button onclick="exportWheel()">💾 Exportar</button>
-    <button onclick="exportAllWheels()">📦 Exportar Todo</button>
-    <button onclick="importWheels()">📥 Importar</button>
-    <hr/>
-    <div id="wheelList"></div>
+<button id="menu-toggle">☰</button>
+<button id="gear-toggle">⚙️</button>
+
+<div class="side" id="menu">
+  <h3>📂 Ruletas</h3>
+  <button onclick="openCreateModal()">➕ Nueva</button>
+  <button onclick="exportWheel()">💾 Exportar actual</button>
+  <button onclick="exportAllWheels()">📦 Exportar todas</button>
+  <button onclick="importWheels()">📥 Importar</button>
+  <hr/>
+  <div id="wheelList"></div>
+</div>
+
+<div class="gear" id="gear">
+  <h3>⚙️ Ajustes</h3>
+  <label><input type="checkbox" id="darkToggle"/> Modo Oscuro</label><br/><br/>
+  <label>🎵 Giro:</label><input type="file" onchange="loadSound('spin', this.files[0])"/><br/>
+  <label>🏆 Ganador:</label><input type="file" onchange="loadSound('win', this.files[0])"/><br/>
+  <label>🎶 Música fondo:</label><input type="file" onchange="loadMusic(this.files[0])"/><br/>
+  <button onclick="stopMusic()">⏹️ Detener música</button>
+</div>
+
+<div class="modal" id="createModal">
+  <div class="modal-content">
+    <h3>➕ Crear Ruleta</h3>
+    <input id="newEmoji" placeholder="Emoji (o selector después)"/>
+    <input id="newName" placeholder="Nombre de la ruleta"/>
+    <button onclick="createWheel()">Crear</button>
+    <button onclick="closeCreateModal()">Cancelar</button>
   </div>
+</div>
 
-  <div class="gear" id="gear">
-    <h3>⚙️ Ajustes</h3>
-    <label><input type="checkbox" id="darkToggle"> 🌙 Modo oscuro</label><br><br>
-    <label>🎵 Sonido Giro</label><input type="file" onchange="loadSound('spin', this.files[0])"><br>
-    <label>🏆 Sonido Ganar</label><input type="file" onchange="loadSound('win', this.files[0])"><br>
-    <label>🎶 Música Fondo</label><input type="file" onchange="loadMusic(this.files[0])"><br>
-    <button onclick="stopMusic()">⏹️ Detener música</button>
+<div class="header">
+  <input id="emojiInput" maxlength="2" placeholder="🎯"/>
+  <input id="nameInput" placeholder="Nombre de la ruleta"/>
+  <button onclick="toggleLeft()">🖥️ Vista Completa</button>
+</div>
+<h1 id="wheelTitle">🎯 Ruleta Pro</h1>
+<div class="container">
+  <div class="panel left" id="leftPanel">
+    <textarea id="optionInput" placeholder="Usa -Categoría- y opciones\nEj:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
+    <button onclick="addOptions()">Agregar</button>
+    <button onclick="clearAll()">🧹 Borrar todo</button>
+    <h4>Categorías</h4>
+    <ul id="categories"></ul>
+    <h4>Opciones</h4>
+    <ul id="optionList"></ul>
   </div>
-
-  <div class="modal" id="createModal">
-    <div class="modal-content">
-      <h3>➕ Nueva Ruleta</h3>
-      <input id="newEmoji" placeholder="Emoji" maxlength="2">
-      <input id="newName" placeholder="Nombre">
-      <button onclick="createWheel()">Crear</button>
-      <button onclick="closeCreateModal()">Cancelar</button>
-    </div>
+  <div class="panel">
+    <canvas id="wheel" width="400" height="400"></canvas>
+    <div style="margin-top:10px"><button onclick="spinWheel()">🎯 Girar</button></div>
+    <p id="result">🎯 Esperando...</p>
   </div>
+</div>
 
-  <div class="header">
-    <input id="emojiInput" placeholder="🎯" maxlength="2">
-    <input id="nameInput" placeholder="Nombre de ruleta">
-    <button onclick="toggleLeft()">🖥️ Vista Completa</button>
-  </div>
-  <h1 id="wheelTitle">🎯 Ruleta Pro</h1>
-
-  <div class="container">
-    <div class="panel left" id="leftPanel">
-      <textarea id="optionInput" placeholder="Usa -Categoria- antes de las opciones..."></textarea>
-      <button onclick="addOptions()">Agregar Opciones</button>
-      <button onclick="clearAll()">🧹 Borrar Todo</button>
-      <ul id="categories"></ul>
-    </div>
-
-    <div class="panel">
-      <canvas id="wheel" width="400" height="400"></canvas>
-      <button onclick="spinWheel()">🎯 Girar</button>
-      <p id="result"></p>
-    </div>
-  </div>
 <script>
-let options = [];
-let categories = {};
-let wheels = [];
-let currentRotation = 0;
-let lastWinnerIndex = -1;
-let sounds = {};
-let music = null;
+let options = [], categories = {}, wheels = [], lastWinnerIndex = -1, sounds = {}, music = null;
+const canvas = document.getElementById("wheel"), ctx = canvas.getContext("2d");
+const resultEl = document.getElementById("result");
 
-const canvas = document.getElementById('wheel');
-const ctx = canvas.getContext('2d');
-const resultEl = document.getElementById('result');
-
-const emojiInput = document.getElementById('emojiInput');
-const nameInput = document.getElementById('nameInput');
-const wheelTitle = document.getElementById('wheelTitle');
-emojiInput.oninput = nameInput.oninput = () => {
-  wheelTitle.textContent = `${emojiInput.value || "🎯"} ${nameInput.value || "Ruleta Pro"}`;
-};
+function updateTitle() {
+  const emoji = document.getElementById('emojiInput').value || '🎯';
+  const name = document.getElementById('nameInput').value || 'Ruleta Pro';
+  document.getElementById('wheelTitle').textContent = `${emoji} ${name}`;
+}
+document.getElementById('emojiInput').oninput = updateTitle;
+document.getElementById('nameInput').oninput = updateTitle;
 
 function randomColor() {
-  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+  return '#' + Math.floor(Math.random()*0xFFFFFF).toString(16).padStart(6,'0');
 }
 
 function openCreateModal() {
   document.getElementById('createModal').style.display = 'flex';
 }
-
 function closeCreateModal() {
   document.getElementById('createModal').style.display = 'none';
 }
-
 function createWheel() {
-  const emoji = document.getElementById('newEmoji').value || "🎯";
-  const name = document.getElementById('newName').value || "Ruleta";
+  const emoji = document.getElementById('newEmoji').value || '🎯';
+  const name = document.getElementById('newName').value || 'Ruleta';
   wheels.push({ name, emoji, options: [], categories: {} });
   updateWheelList();
   loadWheel(wheels.length - 1);
   closeCreateModal();
 }
-
 function updateWheelList() {
   const list = document.getElementById('wheelList');
   list.innerHTML = "";
   wheels.forEach((w, i) => {
-    const div = document.createElement("div");
-    div.className = "wheel-list-item";
-    div.innerHTML = `
-      <span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
-      <button onclick="deleteWheel(${i})">🗑️</button>`;
-    list.appendChild(div);
+    const item = document.createElement('div');
+    item.className = 'wheel-list-item';
+    item.innerHTML = `<span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
+    <button onclick="deleteWheel(${i})">🗑</button>`;
+    list.appendChild(item);
   });
 }
-
+function deleteWheel(i) {
+  if (confirm("¿Eliminar?")) { wheels.splice(i, 1); updateWheelList(); }
+}
 function loadWheel(index) {
   const w = wheels[index];
-  emojiInput.value = w.emoji;
-  nameInput.value = w.name;
+  document.getElementById('emojiInput').value = w.emoji;
+  document.getElementById('nameInput').value = w.name;
   options = JSON.parse(JSON.stringify(w.options));
   categories = JSON.parse(JSON.stringify(w.categories));
-  emojiInput.dispatchEvent(new Event("input"));
-  drawWheel();
-  updateCategories();
-}
-
-function deleteWheel(i) {
-  if (confirm("¿Eliminar ruleta?")) {
-    wheels.splice(i, 1);
-    updateWheelList();
-  }
+  updateTitle(); updateCategories(); updateOptions(); drawWheel();
 }
 
 function addOptions() {
-  const input = document.getElementById('optionInput').value.trim();
-  if (!input) return;
-  const lines = input.split('\n');
-  let currentCategory = "Default";
-  if (!categories[currentCategory]) categories[currentCategory] = { color: randomColor(), active: true };
-
-  for (let line of lines) {
+  const text = document.getElementById('optionInput').value.trim();
+  if (!text) return;
+  const lines = text.split('\n');
+  let current = "Default";
+  if (!categories[current]) categories[current] = { color: randomColor(), active: true, textColor: "#000" };
+  for (const line of lines) {
     if (/^-\w.*-$/.test(line)) {
-      currentCategory = line.slice(1, -1).trim();
-      if (!categories[currentCategory]) categories[currentCategory] = { color: randomColor(), active: true };
+      current = line.slice(1, -1).trim();
+      if (!categories[current]) categories[current] = { color: randomColor(), active: true, textColor: "#000" };
       continue;
     }
-    const [text, weight] = line.split(':');
-    options.push({ text: text.trim(), weight: parseFloat(weight) || 1, category: currentCategory });
+    const [label, weight] = line.split(':');
+    options.push({ text: label.trim(), weight: parseFloat(weight) || 1, category: current });
   }
-
-  drawWheel();
-  updateCategories();
+  updateCategories(); updateOptions(); drawWheel();
 }
 
 function clearAll() {
-  if (!confirm("¿Borrar todo?")) return;
-  options = [];
-  categories = {};
-  drawWheel();
-  updateCategories();
-}
-
-function updateCategories() {
-  const list = document.getElementById('categories');
-  list.innerHTML = "";
-  for (const cat in categories) {
-    const item = document.createElement("li");
-    item.innerHTML = `
-      <label>
-        <input type="checkbox" ${categories[cat].active ? "checked" : ""} onchange="toggleCategory('${cat}')">
-        ${cat}
-      </label>
-      <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)" />`;
-    list.appendChild(item);
+  if (confirm("¿Borrar todo?")) {
+    options = []; categories = {};
+    updateOptions(); updateCategories(); drawWheel();
   }
 }
 
-function toggleCategory(cat) {
-  categories[cat].active = !categories[cat].active;
-  drawWheel();
+function updateCategories() {
+  const list = document.getElementById("categories");
+  list.innerHTML = "";
+  for (const cat in categories) {
+    const row = document.createElement("li");
+    row.innerHTML = `
+      <label><input type="checkbox" ${categories[cat].active ? "checked" : ""} onchange="toggleCategory('${cat}')"> ${cat}</label>
+      <input type="color" value="${categories[cat].color}" onchange="setCatColor('${cat}', this.value)">
+      <input type="color" value="${categories[cat].textColor}" onchange="setCatTextColor('${cat}', this.value)">
+    `;
+    list.appendChild(row);
+  }
 }
+function toggleCategory(cat) { categories[cat].active = !categories[cat].active; drawWheel(); }
+function setCatColor(cat, color) { categories[cat].color = color; drawWheel(); }
+function setCatTextColor(cat, color) { categories[cat].textColor = color; drawWheel(); }
 
-function setCategoryColor(cat, color) {
-  categories[cat].color = color;
-  drawWheel();
+function updateOptions() {
+  const list = document.getElementById("optionList");
+  list.innerHTML = "";
+  options.forEach((opt, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+      <input value="${opt.text}" onchange="options[${i}].text=this.value;drawWheel()"/>
+      <input type="number" value="${opt.weight}" onchange="options[${i}].weight=parseFloat(this.value)||1;drawWheel()" style="width:50px"/>
+      <button onclick="options.splice(${i},1);updateOptions();drawWheel()">❌</button>`;
+    list.appendChild(li);
+  });
 }
 
 function drawWheel() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const totalWeight = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
-  if (totalWeight === 0) return;
-
-  let start = 0;
+  const total = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
+  if (total === 0) return ctx.clearRect(0,0,400,400);
+  ctx.clearRect(0,0,400,400);
+  let angleStart = 0;
   options.forEach((o, i) => {
-    if (!categories[o.category]?.active) return;
-    const angle = (o.weight / totalWeight) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, start, start + angle);
-    ctx.fillStyle = categories[o.category].color;
-    ctx.fill();
+    const cat = categories[o.category];
+    if (!cat?.active) return;
+    const angle = (o.weight / total) * 2 * Math.PI;
+    ctx.beginPath(); ctx.moveTo(200,200);
+    ctx.arc(200,200,200, angleStart, angleStart + angle);
+    ctx.fillStyle = cat.color; ctx.fill();
     if (i === lastWinnerIndex) {
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#000";
-      ctx.stroke();
+      ctx.lineWidth = 4; ctx.strokeStyle = "#000"; ctx.stroke();
     }
     ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(start + angle / 2);
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#000";
+    ctx.translate(200,200); ctx.rotate(angleStart + angle/2);
+    ctx.textAlign = "right"; ctx.fillStyle = cat.textColor || "#000";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText(o.text, 180, 0);
     ctx.restore();
-    start += angle;
+    angleStart += angle;
   });
 }
 
 function spinWheel() {
-  const totalWeight = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
-  if (totalWeight === 0) return;
-  let rand = Math.random() * totalWeight;
+  const total = options.reduce((sum, o) => categories[o.category]?.active ? sum + o.weight : sum, 0);
+  if (total === 0) return;
+  let rand = Math.random() * total;
   for (let i = 0; i < options.length; i++) {
-    const cat = categories[options[i].category];
-    if (!cat || !cat.active) continue;
+    if (!categories[options[i].category]?.active) continue;
     rand -= options[i].weight;
     if (rand <= 0) {
       lastWinnerIndex = i;
@@ -341,27 +238,27 @@ function spinWheel() {
     }
   }
   drawWheel();
-  resultEl.textContent = `🎉 Ganador: ${options[lastWinnerIndex].text}`;
+  resultEl.textContent = `🎉 Ganador: ${options[lastWinnerIndex]?.text || "-"}`;
   if (sounds.win) sounds.win.cloneNode().play();
 }
 
 function toggleLeft() {
-  document.getElementById("leftPanel").classList.toggle("hidden");
+  document.getElementById('leftPanel').classList.toggle('hidden');
 }
 
 function exportWheel() {
   const json = JSON.stringify({ name: nameInput.value, emoji: emojiInput.value, options, categories }, null, 2);
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-  a.download = `${emojiInput.value || "ruleta"}.json`;
+  a.download = `ruleta-${nameInput.value || "ruleta"}.json`;
   a.click();
 }
 
 function exportAllWheels() {
-  const json = JSON.stringify(wheels, null, 2);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-  a.download = `ruletas.json`;
+  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ruletas.json";
   a.click();
 }
 
@@ -370,25 +267,21 @@ function importWheels() {
   input.type = "file";
   input.accept = "application/json";
   input.onchange = e => {
-    const file = e.target.files[0];
     const reader = new FileReader();
     reader.onload = () => {
-      const data = JSON.parse(reader.result);
-      if (Array.isArray(data)) wheels = data;
-      else wheels.push(data);
+      const json = JSON.parse(reader.result);
+      if (Array.isArray(json)) wheels = json;
+      else wheels.push(json);
       updateWheelList();
     };
-    reader.readAsText(file);
+    reader.readAsText(e.target.files[0]);
   };
   input.click();
 }
 
 function loadSound(type, file) {
-  const url = URL.createObjectURL(file);
-  const audio = new Audio(url);
-  sounds[type] = audio;
+  sounds[type] = new Audio(URL.createObjectURL(file));
 }
-
 function loadMusic(file) {
   if (music) music.pause();
   music = new Audio(URL.createObjectURL(file));
@@ -396,13 +289,10 @@ function loadMusic(file) {
   music.volume = 0.4;
   music.play();
 }
+function stopMusic() { if (music) music.pause(); }
 
-function stopMusic() {
-  if (music) music.pause();
-}
-
-document.getElementById('darkToggle').onchange = (e) => {
-  document.body.dataset.theme = e.target.checked ? 'dark' : 'light';
+document.getElementById("darkToggle").onchange = e => {
+  document.body.dataset.theme = e.target.checked ? "dark" : "light";
 };
 </script>
 </body>
