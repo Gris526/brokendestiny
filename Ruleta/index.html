@@ -6,9 +6,9 @@
   <title>Ruleta Pro 🎯</title>
   <style>
     :root {
-      --bg: #ffffff;
+      --bg: #fdfdfd;
       --text: #111;
-      --panel: #f0f0f0;
+      --panel: #fff;
       --border: #ccc;
     }
     [data-theme="dark"] {
@@ -58,11 +58,6 @@
     }
     .side-menu.open { transform: translateX(0); }
     .gear-menu.open { transform: translateX(0); }
-
-    .side-menu button, .gear-menu button {
-      width: 100%;
-      margin: 0.4rem 0;
-    }
 
     .header {
       text-align: center;
@@ -131,6 +126,15 @@
       margin-top: 0.3rem;
       border-radius: 4px;
     }
+
+    textarea, input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body data-theme="light">
@@ -139,10 +143,10 @@
 <button id="menu-toggle">☰</button>
 <div class="side-menu" id="sideMenu">
   <h3>📂 Ruletas</h3>
-  <button onclick="openCreateModal()">➕ Nueva</button>
-  <button onclick="exportWheel()">💾 Exportar</button>
-  <button onclick="exportAllWheels()">📦 Exportar todo</button>
-  <button onclick="importWheels()">📥 Importar</button>
+  <button id="newWheelBtn">➕ Nueva</button>
+  <button id="exportBtn">💾 Exportar</button>
+  <button id="exportAllBtn">📦 Exportar todo</button>
+  <button id="importBtn">📥 Importar</button>
   <hr>
   <div id="wheelList"></div>
 </div>
@@ -183,8 +187,8 @@
   <div id="result">🎯 Esperando...</div>
 </div>
 
-<!-- Panel oculto dentro de ⚙️ para editar opciones -->
-<div id="optionsEditor" class="gear-menu hidden" style="right: auto; left: 300px; width: 350px;">
+<!-- Panel de opciones (editable desde engranaje) -->
+<div id="optionsEditor" class="gear-menu hidden" style="right:auto; left:300px; width:320px;">
   <h3>🧩 Categorías & Opciones</h3>
   <textarea id="optionInput" placeholder="Ej:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
   <button onclick="addOptions()">Agregar</button>
@@ -196,8 +200,7 @@ let categories = {};
 let wheels = [];
 let currentRotation = 0;
 let lastWinnerIndex = -1;
-let sounds = {};
-let music = null;
+let sounds = {}, music = null;
 let fastMode = false;
 let wheelImage = null;
 let bgImageUrl = null;
@@ -208,14 +211,14 @@ const ctx = canvas.getContext("2d");
 const emojiDisplay = document.getElementById("emojiDisplay");
 const wheelTitle = document.getElementById("wheelTitle");
 
-document.getElementById("menu-toggle").onclick = () => {
+// Menu toggles
+document.getElementById("menu-toggle").onclick = () =>
   document.getElementById("sideMenu").classList.toggle("open");
-};
-document.getElementById("gear-toggle").onclick = () => {
+document.getElementById("gear-toggle").onclick = () =>
   document.getElementById("gearMenu").classList.toggle("open");
-};
 document.getElementById("darkToggle").onchange = e =>
   document.body.dataset.theme = e.target.checked ? "dark" : "light";
+
 document.getElementById("nameInput").oninput = updateHeader;
 document.getElementById("emojiInput").oninput = updateHeader;
 
@@ -233,6 +236,7 @@ function toggleFastMode() {
   alert(`Modo rápido: ${fastMode ? "activado" : "desactivado"}`);
 }
 
+// Agregar opciones y categorías
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
@@ -286,8 +290,8 @@ function updateCategoryDisplay() {
     categories[cat].options.forEach((opt, i) => {
       const row = document.createElement("div");
       row.innerHTML = `
-        <input value="${opt.text}" onchange="categories['${cat}'].options[${i}].text=this.value; drawWheel()"/>
-        <input type="number" min="1" value="${opt.weight}" style="width:50px" onchange="categories['${cat}'].options[${i}].weight=parseFloat(this.value); drawWheel()"/>
+        <input value="${opt.text}" onchange="categories['${cat}'].options[${i}].text=this.value; drawWheel()" />
+        <input type="number" min="1" value="${opt.weight}" style="width:50px" onchange="categories['${cat}'].options[${i}].weight=parseFloat(this.value); drawWheel()" />
         <button onclick="removeOption('${cat}', ${i})">❌</button>`;
       list.appendChild(row);
     });
@@ -351,182 +355,179 @@ function setWheelImage(file) {
   };
   reader.readAsDataURL(file);
 }
+
+function randomColor() {
+  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+}
 </script>
-<div class="main">
-  <canvas id="wheel" width="400" height="400"></canvas>
-  <div style="margin-top: 1rem;">
-    <button onclick="spinWheel()">🎲 Girar</button>
-    <button onclick="spinFast()">⚡ Rápido</button>
-  </div>
-  <div id="result">🎯 Esperando...</div>
-</div>
-
-<!-- Panel oculto dentro de ⚙️ para editar opciones -->
-<div id="optionsEditor" class="gear-menu hidden" style="right: auto; left: 300px; width: 350px;">
-  <h3>🧩 Categorías & Opciones</h3>
-  <textarea id="optionInput" placeholder="Ej:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
-  <button onclick="addOptions()">Agregar</button>
-  <div id="categoriesContainer"></div>
-</div>
-
 <script>
-let categories = {};
-let wheels = [];
-let currentRotation = 0;
-let lastWinnerIndex = -1;
-let sounds = {};
-let music = null;
-let fastMode = false;
-let wheelImage = null;
-let bgImageUrl = null;
+// 🎯 Animación con easing
+function spinWheel() {
+  const flat = Object.entries(categories)
+    .filter(([_, c]) => c.active !== false)
+    .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
 
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+  const totalWeight = flat.reduce((sum, o) => sum + o.weight, 0);
+  if (totalWeight === 0) return;
 
-const emojiDisplay = document.getElementById("emojiDisplay");
-const wheelTitle = document.getElementById("wheelTitle");
+  const angles = flat.map(o => (o.weight / totalWeight) * 2 * Math.PI);
+  let acc = 0;
+  const sliceEnds = angles.map(a => (acc += a));
+  const spinAmount = Math.random() * acc;
+  const index = sliceEnds.findIndex(a => spinAmount <= a);
 
-document.getElementById("menu-toggle").onclick = () => {
-  document.getElementById("sideMenu").classList.toggle("open");
-};
-document.getElementById("gear-toggle").onclick = () => {
-  document.getElementById("gearMenu").classList.toggle("open");
-};
-document.getElementById("darkToggle").onchange = e =>
-  document.body.dataset.theme = e.target.checked ? "dark" : "light";
-document.getElementById("nameInput").oninput = updateHeader;
-document.getElementById("emojiInput").oninput = updateHeader;
+  const start = performance.now();
+  const rotateFrom = currentRotation;
+  const rotateTo = currentRotation + 10 * Math.PI + spinAmount;
+  const duration = 3000;
 
-function updateHeader() {
-  emojiDisplay.textContent = emojiInput.value || "🎯";
-  wheelTitle.textContent = nameInput.value || "Ruleta Pro";
-}
+  if (sounds.spin) sounds.spin.cloneNode().play();
 
-function toggleOptionsPanel() {
-  document.getElementById("optionsEditor").classList.toggle("hidden");
-}
+  function animate(time) {
+    const t = Math.min((time - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    currentRotation = rotateFrom + (rotateTo - rotateFrom) * eased;
+    drawWheelRotated(currentRotation, flat);
 
-function toggleFastMode() {
-  fastMode = !fastMode;
-  alert(`Modo rápido: ${fastMode ? "activado" : "desactivado"}`);
-}
-
-function addOptions() {
-  const input = document.getElementById("optionInput").value.trim();
-  if (!input) return;
-  const lines = input.split("\n");
-  let currentCategory = "General";
-  if (!categories[currentCategory])
-    categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (/^-\w.*-$/.test(trimmed)) {
-      currentCategory = trimmed.slice(1, -1).trim();
-      if (!categories[currentCategory])
-        categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
-      continue;
-    }
-    const [text, weightStr] = trimmed.split(":");
-    const weight = parseFloat(weightStr) || 1;
-    categories[currentCategory].options.push({ text: text.trim(), weight });
-  }
-
-  updateCategoryDisplay();
-  drawWheel();
-  document.getElementById("optionInput").value = "";
-}
-
-function updateCategoryDisplay() {
-  const container = document.getElementById("categoriesContainer");
-  container.innerHTML = "";
-  for (const cat in categories) {
-    const block = document.createElement("div");
-    block.className = "category-block";
-
-    const header = document.createElement("div");
-    header.className = "category-header";
-    header.innerHTML = `
-      <strong>${cat}</strong>
-      <div>
-        <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)">
-        <input type="color" value="${categories[cat].textColor}" onchange="setCategoryTextColor('${cat}', this.value)">
-        <input type="file" accept="image/*" onchange="setCategoryImage('${cat}', this.files[0])">
-        <button onclick="toggleOptions('${cat}')">▼</button>
-      </div>
-    `;
-    block.appendChild(header);
-
-    const list = document.createElement("div");
-    list.className = "category-options";
-    list.id = `opt-${cat}`;
-
-    categories[cat].options.forEach((opt, i) => {
-      const row = document.createElement("div");
-      row.innerHTML = `
-        <input value="${opt.text}" onchange="categories['${cat}'].options[${i}].text=this.value; drawWheel()"/>
-        <input type="number" min="1" value="${opt.weight}" style="width:50px" onchange="categories['${cat}'].options[${i}].weight=parseFloat(this.value); drawWheel()"/>
-        <button onclick="removeOption('${cat}', ${i})">❌</button>`;
-      list.appendChild(row);
-    });
-
-    block.appendChild(list);
-    container.appendChild(block);
-  }
-}
-
-function toggleOptions(cat) {
-  const el = document.getElementById(`opt-${cat}`);
-  if (el) el.classList.toggle("hidden");
-}
-
-function removeOption(cat, index) {
-  categories[cat].options.splice(index, 1);
-  if (categories[cat].options.length === 0) delete categories[cat];
-  updateCategoryDisplay();
-  drawWheel();
-}
-
-function setCategoryColor(cat, color) {
-  categories[cat].color = color;
-  drawWheel();
-}
-function setCategoryTextColor(cat, color) {
-  categories[cat].textColor = color;
-  drawWheel();
-}
-function setCategoryImage(cat, file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    categories[cat].image = reader.result;
-    drawWheel();
-  };
-  reader.readAsDataURL(file);
-}
-
-function setBackground(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    bgImageUrl = reader.result;
-    const img = document.getElementById("background-preview");
-    img.src = bgImageUrl;
-    img.classList.remove("hidden");
-    document.body.style.backgroundImage = `url(${bgImageUrl})`;
-    document.body.style.backgroundSize = "cover";
-  };
-  reader.readAsDataURL(file);
-}
-
-function setWheelImage(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      wheelImage = img;
+    if (t < 1) requestAnimationFrame(animate);
+    else {
+      resultEl.textContent = `🏆 Ganador: ${flat[index].text}`;
+      if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
+    }
+  }
+
+  requestAnimationFrame(animate);
 }
+
+// ⚡ Giro rápido (sin animación)
+function spinFast() {
+  const flat = Object.entries(categories)
+    .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
+  const totalWeight = flat.reduce((sum, o) => sum + o.weight, 0);
+  if (totalWeight === 0) return;
+
+  let rand = Math.random() * totalWeight;
+  for (let i = 0; i < flat.length; i++) {
+    rand -= flat[i].weight;
+    if (rand <= 0) {
+      resultEl.textContent = `⚡ Ganador: ${flat[i].text}`;
+      if (sounds.win) sounds.win.cloneNode().play();
+      break;
+    }
+  }
+  drawWheel();
+}
+
+// 🎨 Dibujar ruleta rotada
+function drawWheelRotated(angle, options) {
+  ctx.save();
+  ctx.clearRect(0, 0, 400, 400);
+  ctx.translate(200, 200);
+  ctx.rotate(angle);
+  ctx.translate(-200, -200);
+  wheelImage ? ctx.drawImage(wheelImage, 0, 0, 400, 400) : drawWheel();
+  ctx.restore();
+}
+
+// 🎵 Sonidos y música
+function loadSound(type, file) {
+  sounds[type] = new Audio(URL.createObjectURL(file));
+}
+function loadMusic(file) {
+  if (music) music.pause();
+  music = new Audio(URL.createObjectURL(file));
+  music.loop = true;
+  music.volume = 0.4;
+  music.play();
+}
+function stopMusic() {
+  if (music) music.pause();
+}
+
+// 📦 Exportar/Importar
+function exportWheel() {
+  const data = {
+    name: nameInput.value,
+    emoji: emojiInput.value,
+    categories
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ruleta-${data.name || 'custom'}.json`;
+  a.click();
+}
+function exportAllWheels() {
+  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ruletas.json";
+  a.click();
+}
+function importWheels() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) wheels = wheels.concat(data);
+        else wheels.push(data);
+        updateWheelList();
+      } catch (e) {
+        alert("Error al importar archivo");
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+// 🆕 Crear ruleta
+document.getElementById("newWheelBtn").onclick = () => {
+  const name = prompt("Nombre:");
+  const emoji = prompt("Emoji:");
+  if (!name || !emoji) return;
+  wheels.push({ name, emoji, categories: {} });
+  loadWheel(wheels.length - 1);
+};
+
+// 📃 Listar ruletas
+function updateWheelList() {
+  const list = document.getElementById("wheelList");
+  list.innerHTML = "";
+  wheels.forEach((w, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-list-item";
+    div.innerHTML = `
+      <span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>`;
+    list.appendChild(div);
+  });
+}
+function deleteWheel(i) {
+  if (confirm("¿Eliminar esta ruleta?")) {
+    wheels.splice(i, 1);
+    updateWheelList();
+  }
+}
+function loadWheel(i) {
+  const w = wheels[i];
+  emojiInput.value = w.emoji;
+  nameInput.value = w.name;
+  updateHeader();
+  categories = structuredClone(w.categories);
+  updateCategoryDisplay();
+  drawWheel();
+}
+
+// Activar botones
+document.getElementById("exportBtn").onclick = exportWheel;
+document.getElementById("exportAllBtn").onclick = exportAllWheels;
+document.getElementById("importBtn").onclick = importWheels;
 </script>
+</body>
+</html>
