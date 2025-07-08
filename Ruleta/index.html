@@ -6,9 +6,9 @@
   <title>Ruleta Pro 🎯</title>
   <style>
     :root {
-      --bg: #fdfdfd;
+      --bg: #ffffff;
       --text: #111;
-      --panel: #fff;
+      --panel: #f0f0f0;
       --border: #ccc;
     }
     [data-theme="dark"] {
@@ -17,15 +17,14 @@
       --panel: #1e1e1e;
       --border: #444;
     }
-    body {
+    html, body {
       margin: 0;
-      font-family: sans-serif;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      font-family: sans-serif;
       transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
     }
     #menu-toggle, #gear-toggle {
       position: fixed;
@@ -33,16 +32,17 @@
       font-size: 24px;
       border: none;
       background: none;
-      z-index: 1001;
       cursor: pointer;
+      z-index: 1001;
     }
     #menu-toggle { left: 10px; }
     #gear-toggle { right: 10px; }
+
     .side-menu, .gear-menu {
       position: fixed;
       top: 0;
       height: 100vh;
-      width: 280px;
+      width: 300px;
       background: var(--panel);
       overflow-y: auto;
       padding: 1rem;
@@ -59,65 +59,30 @@
     .side-menu.open { transform: translateX(0); }
     .gear-menu.open { transform: translateX(0); }
 
-    .header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 4rem;
-    }
-    .header input {
-      font-size: 1.2rem;
-      text-align: center;
-      margin: 0.2rem 0;
-      padding: 0.3rem;
+    .side-menu button, .gear-menu button {
+      width: 100%;
+      margin: 0.4rem 0;
     }
 
-    h1 {
-      margin: 0.2rem 0;
-      font-size: 1.8rem;
+    .header {
       text-align: center;
+      margin-top: 4rem;
+    }
+
+    #emojiDisplay {
+      font-size: 3rem;
+    }
+
+    #wheelTitle {
+      font-size: 1.6rem;
+      margin: 0.2rem 0;
     }
 
     .main {
       display: flex;
-      flex-direction: row;
-      gap: 2rem;
-      justify-content: center;
-      padding: 2rem;
-      width: 100%;
-      flex-wrap: wrap;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-
-    .left-panel {
-      width: 300px;
-      display: flex;
       flex-direction: column;
-      gap: 1rem;
-    }
-
-    .category-block {
-      border: 1px solid var(--border);
-      padding: 0.5rem;
-      border-radius: 4px;
-      margin-bottom: 0.5rem;
-    }
-
-    .category-header {
-      display: flex;
-      justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-    }
-
-    .category-options {
-      margin-top: 0.5rem;
+      padding: 1rem;
     }
 
     canvas {
@@ -127,75 +92,103 @@
     }
 
     #result {
-      text-align: center;
       font-weight: bold;
       font-size: 1.2rem;
       margin-top: 1rem;
+      text-align: center;
     }
 
-    .hidden {
-      display: none !important;
+    .wheel-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #ddd;
+      margin: 0.2rem 0;
+      padding: 0.4rem;
+      border-radius: 5px;
     }
 
-    input[type="color"] {
-      width: 32px;
-      height: 24px;
+    .wheel-list-item button {
+      background: #ff4d4d;
+      color: white;
       border: none;
-      margin-left: 4px;
+      cursor: pointer;
+      padding: 0.2rem 0.6rem;
     }
 
-    .side-menu button, .gear-menu button {
-      margin: 0.3rem 0;
+    input[type="file"], input[type="color"] {
+      margin: 0.4rem 0;
+    }
+
+    label { display: block; margin-top: 0.5rem; }
+
+    .hidden { display: none !important; }
+
+    #background-preview {
       width: 100%;
+      max-height: 80px;
+      object-fit: cover;
+      margin-top: 0.3rem;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body data-theme="light">
 
-<!-- Menú Izquierdo ☰ -->
+<!-- ☰ Menú lateral izquierdo -->
 <button id="menu-toggle">☰</button>
 <div class="side-menu" id="sideMenu">
   <h3>📂 Ruletas</h3>
   <button onclick="openCreateModal()">➕ Nueva</button>
   <button onclick="exportWheel()">💾 Exportar</button>
-  <button onclick="exportAllWheels()">📦 Exportar Todo</button>
+  <button onclick="exportAllWheels()">📦 Exportar todo</button>
   <button onclick="importWheels()">📥 Importar</button>
-  <hr/>
+  <hr>
   <div id="wheelList"></div>
 </div>
 
-<!-- Menú Derecho ⚙️ -->
+<!-- ⚙️ Configuración de la ruleta -->
 <button id="gear-toggle">⚙️</button>
 <div class="gear-menu" id="gearMenu">
-  <h3>⚙️ Opciones</h3>
-  <label>Emoji: <input id="emojiInput" maxlength="2" /></label><br/>
-  <label>Nombre: <input id="nameInput" /></label><br/>
-  <button onclick="toggleLeftPanel()">🎛 Mostrar/Ocultar Panel</button><br/>
-  <label><input type="checkbox" id="darkToggle"/> 🌙 Modo oscuro</label><br/><br/>
-  <label>🎵 Sonido Giro:</label><input type="file" onchange="loadSound('spin', this.files[0])"><br/>
-  <label>🏆 Sonido Ganador:</label><input type="file" onchange="loadSound('win', this.files[0])"><br/>
-  <label>🎶 Música Fondo:</label><input type="file" onchange="loadMusic(this.files[0])"><br/>
+  <h3>⚙️ Configuración</h3>
+  <label>Nombre: <input id="nameInput" /></label>
+  <label>Emoji: <input id="emojiInput" maxlength="2" /></label>
+  <label><input type="checkbox" id="darkToggle" /> Modo oscuro</label>
+  <button onclick="toggleFastMode()">⚡ Modo Roll Rápido</button>
+  <button onclick="toggleOptionsPanel()">🎛 Mostrar/Ocultar editor</button>
+  <hr>
+  <label>🎨 Fondo:</label>
+  <input type="file" accept="image/*" onchange="setBackground(this.files[0])" />
+  <img id="background-preview" class="hidden">
+  <label>🖼 Imagen ruleta personalizada:</label>
+  <input type="file" accept="image/*" onchange="setWheelImage(this.files[0])" />
+  <hr>
+  <label>🎵 Sonido giro:</label><input type="file" onchange="loadSound('spin', this.files[0])">
+  <label>🏆 Sonido ganar:</label><input type="file" onchange="loadSound('win', this.files[0])">
+  <label>🎶 Música fondo:</label><input type="file" onchange="loadMusic(this.files[0])">
   <button onclick="stopMusic()">⏹️ Detener música</button>
 </div>
 
-<!-- Cabecera centrada -->
+<!-- Cabecera -->
 <div class="header">
-  <div id="emojiDisplay" style="font-size: 2.5rem;">🎯</div>
-  <h1 id="wheelTitle">Ruleta Pro</h1>
+  <div id="emojiDisplay">🎯</div>
+  <div id="wheelTitle">Ruleta Pro</div>
 </div>
 <div class="main">
-  <div class="panel left-panel" id="leftPanel">
-    <h3>🎯 Opciones y Categorías</h3>
-    <textarea id="optionInput" placeholder="Usa -Categoría- para agrupar\nEj:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
-    <button onclick="addOptions()">Agregar Opciones</button>
-    <div id="categoriesContainer"></div>
+  <canvas id="wheel" width="400" height="400"></canvas>
+  <div style="margin-top: 1rem;">
+    <button onclick="spinWheel()">🎲 Girar</button>
+    <button onclick="spinFast()">⚡ Rápido</button>
   </div>
+  <div id="result">🎯 Esperando...</div>
+</div>
 
-  <div class="panel centered">
-    <canvas id="wheel" width="400" height="400"></canvas>
-    <button onclick="spinWheel()" style="margin-top: 1rem;">🎲 Girar</button>
-    <div id="result">🎯 Esperando...</div>
-  </div>
+<!-- Panel oculto dentro de ⚙️ para editar opciones -->
+<div id="optionsEditor" class="gear-menu hidden" style="right: auto; left: 300px; width: 350px;">
+  <h3>🧩 Categorías & Opciones</h3>
+  <textarea id="optionInput" placeholder="Ej:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
+  <button onclick="addOptions()">Agregar</button>
+  <div id="categoriesContainer"></div>
 </div>
 
 <script>
@@ -205,45 +198,55 @@ let currentRotation = 0;
 let lastWinnerIndex = -1;
 let sounds = {};
 let music = null;
+let fastMode = false;
+let wheelImage = null;
+let bgImageUrl = null;
 
-// UI Toggle
-document.getElementById("menu-toggle").onclick = () =>
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const emojiDisplay = document.getElementById("emojiDisplay");
+const wheelTitle = document.getElementById("wheelTitle");
+
+document.getElementById("menu-toggle").onclick = () => {
   document.getElementById("sideMenu").classList.toggle("open");
-
-document.getElementById("gear-toggle").onclick = () =>
+};
+document.getElementById("gear-toggle").onclick = () => {
   document.getElementById("gearMenu").classList.toggle("open");
-
+};
 document.getElementById("darkToggle").onchange = e =>
   document.body.dataset.theme = e.target.checked ? "dark" : "light";
-
-// Título y emoji
-document.getElementById("emojiInput").oninput = updateHeader;
 document.getElementById("nameInput").oninput = updateHeader;
+document.getElementById("emojiInput").oninput = updateHeader;
 
 function updateHeader() {
-  document.getElementById("emojiDisplay").textContent = emojiInput.value || "🎯";
-  document.getElementById("wheelTitle").textContent = nameInput.value || "Ruleta Pro";
+  emojiDisplay.textContent = emojiInput.value || "🎯";
+  wheelTitle.textContent = nameInput.value || "Ruleta Pro";
 }
 
-function toggleLeftPanel() {
-  document.getElementById("leftPanel").classList.toggle("hidden");
+function toggleOptionsPanel() {
+  document.getElementById("optionsEditor").classList.toggle("hidden");
 }
 
-// Agregar opciones y categorías
+function toggleFastMode() {
+  fastMode = !fastMode;
+  alert(`Modo rápido: ${fastMode ? "activado" : "desactivado"}`);
+}
+
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
   const lines = input.split("\n");
   let currentCategory = "General";
   if (!categories[currentCategory])
-    categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, options: [] };
+    categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (/^-\w.*-$/.test(trimmed)) {
       currentCategory = trimmed.slice(1, -1).trim();
       if (!categories[currentCategory])
-        categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, options: [] };
+        categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
       continue;
     }
     const [text, weightStr] = trimmed.split(":");
@@ -270,6 +273,7 @@ function updateCategoryDisplay() {
       <div>
         <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)">
         <input type="color" value="${categories[cat].textColor}" onchange="setCategoryTextColor('${cat}', this.value)">
+        <input type="file" accept="image/*" onchange="setCategoryImage('${cat}', this.files[0])">
         <button onclick="toggleOptions('${cat}')">▼</button>
       </div>
     `;
@@ -298,14 +302,182 @@ function toggleOptions(cat) {
   if (el) el.classList.toggle("hidden");
 }
 
+function removeOption(cat, index) {
+  categories[cat].options.splice(index, 1);
+  if (categories[cat].options.length === 0) delete categories[cat];
+  updateCategoryDisplay();
+  drawWheel();
+}
+
 function setCategoryColor(cat, color) {
   categories[cat].color = color;
   drawWheel();
 }
-
 function setCategoryTextColor(cat, color) {
   categories[cat].textColor = color;
   drawWheel();
+}
+function setCategoryImage(cat, file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    categories[cat].image = reader.result;
+    drawWheel();
+  };
+  reader.readAsDataURL(file);
+}
+
+function setBackground(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    bgImageUrl = reader.result;
+    const img = document.getElementById("background-preview");
+    img.src = bgImageUrl;
+    img.classList.remove("hidden");
+    document.body.style.backgroundImage = `url(${bgImageUrl})`;
+    document.body.style.backgroundSize = "cover";
+  };
+  reader.readAsDataURL(file);
+}
+
+function setWheelImage(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      wheelImage = img;
+      drawWheel();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+</script>
+<div class="main">
+  <canvas id="wheel" width="400" height="400"></canvas>
+  <div style="margin-top: 1rem;">
+    <button onclick="spinWheel()">🎲 Girar</button>
+    <button onclick="spinFast()">⚡ Rápido</button>
+  </div>
+  <div id="result">🎯 Esperando...</div>
+</div>
+
+<!-- Panel oculto dentro de ⚙️ para editar opciones -->
+<div id="optionsEditor" class="gear-menu hidden" style="right: auto; left: 300px; width: 350px;">
+  <h3>🧩 Categorías & Opciones</h3>
+  <textarea id="optionInput" placeholder="Ej:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
+  <button onclick="addOptions()">Agregar</button>
+  <div id="categoriesContainer"></div>
+</div>
+
+<script>
+let categories = {};
+let wheels = [];
+let currentRotation = 0;
+let lastWinnerIndex = -1;
+let sounds = {};
+let music = null;
+let fastMode = false;
+let wheelImage = null;
+let bgImageUrl = null;
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+
+const emojiDisplay = document.getElementById("emojiDisplay");
+const wheelTitle = document.getElementById("wheelTitle");
+
+document.getElementById("menu-toggle").onclick = () => {
+  document.getElementById("sideMenu").classList.toggle("open");
+};
+document.getElementById("gear-toggle").onclick = () => {
+  document.getElementById("gearMenu").classList.toggle("open");
+};
+document.getElementById("darkToggle").onchange = e =>
+  document.body.dataset.theme = e.target.checked ? "dark" : "light";
+document.getElementById("nameInput").oninput = updateHeader;
+document.getElementById("emojiInput").oninput = updateHeader;
+
+function updateHeader() {
+  emojiDisplay.textContent = emojiInput.value || "🎯";
+  wheelTitle.textContent = nameInput.value || "Ruleta Pro";
+}
+
+function toggleOptionsPanel() {
+  document.getElementById("optionsEditor").classList.toggle("hidden");
+}
+
+function toggleFastMode() {
+  fastMode = !fastMode;
+  alert(`Modo rápido: ${fastMode ? "activado" : "desactivado"}`);
+}
+
+function addOptions() {
+  const input = document.getElementById("optionInput").value.trim();
+  if (!input) return;
+  const lines = input.split("\n");
+  let currentCategory = "General";
+  if (!categories[currentCategory])
+    categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^-\w.*-$/.test(trimmed)) {
+      currentCategory = trimmed.slice(1, -1).trim();
+      if (!categories[currentCategory])
+        categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
+      continue;
+    }
+    const [text, weightStr] = trimmed.split(":");
+    const weight = parseFloat(weightStr) || 1;
+    categories[currentCategory].options.push({ text: text.trim(), weight });
+  }
+
+  updateCategoryDisplay();
+  drawWheel();
+  document.getElementById("optionInput").value = "";
+}
+
+function updateCategoryDisplay() {
+  const container = document.getElementById("categoriesContainer");
+  container.innerHTML = "";
+  for (const cat in categories) {
+    const block = document.createElement("div");
+    block.className = "category-block";
+
+    const header = document.createElement("div");
+    header.className = "category-header";
+    header.innerHTML = `
+      <strong>${cat}</strong>
+      <div>
+        <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)">
+        <input type="color" value="${categories[cat].textColor}" onchange="setCategoryTextColor('${cat}', this.value)">
+        <input type="file" accept="image/*" onchange="setCategoryImage('${cat}', this.files[0])">
+        <button onclick="toggleOptions('${cat}')">▼</button>
+      </div>
+    `;
+    block.appendChild(header);
+
+    const list = document.createElement("div");
+    list.className = "category-options";
+    list.id = `opt-${cat}`;
+
+    categories[cat].options.forEach((opt, i) => {
+      const row = document.createElement("div");
+      row.innerHTML = `
+        <input value="${opt.text}" onchange="categories['${cat}'].options[${i}].text=this.value; drawWheel()"/>
+        <input type="number" min="1" value="${opt.weight}" style="width:50px" onchange="categories['${cat}'].options[${i}].weight=parseFloat(this.value); drawWheel()"/>
+        <button onclick="removeOption('${cat}', ${i})">❌</button>`;
+      list.appendChild(row);
+    });
+
+    block.appendChild(list);
+    container.appendChild(block);
+  }
+}
+
+function toggleOptions(cat) {
+  const el = document.getElementById(`opt-${cat}`);
+  if (el) el.classList.toggle("hidden");
 }
 
 function removeOption(cat, index) {
@@ -315,200 +487,46 @@ function removeOption(cat, index) {
   drawWheel();
 }
 
-function randomColor() {
-  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
+function setCategoryColor(cat, color) {
+  categories[cat].color = color;
+  drawWheel();
 }
-</script>
-<script>
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
-const resultEl = document.getElementById("result");
-
-function drawWheelRotated(angle, flatOptions) {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.translate(200, 200);
-  ctx.rotate(angle);
-  ctx.translate(-200, -200);
-
-  const totalWeight = flatOptions.reduce((sum, o) => sum + o.weight, 0);
-  let angleStart = 0;
-  flatOptions.forEach((o, i) => {
-    const sliceAngle = (o.weight / totalWeight) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, angleStart, angleStart + sliceAngle);
-    ctx.fillStyle = categories[o.category].color;
-    ctx.fill();
-    ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(angleStart + sliceAngle / 2);
-    ctx.textAlign = "right";
-    ctx.fillStyle = categories[o.category].textColor || "#000";
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText(o.text, 180, 0);
-    ctx.restore();
-    angleStart += sliceAngle;
-  });
-  ctx.restore();
+function setCategoryTextColor(cat, color) {
+  categories[cat].textColor = color;
+  drawWheel();
+}
+function setCategoryImage(cat, file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    categories[cat].image = reader.result;
+    drawWheel();
+  };
+  reader.readAsDataURL(file);
 }
 
-function drawWheel() {
-  const flatOptions = Object.entries(categories)
-    .filter(([_, c]) => c.active !== false)
-    .flatMap(([cat, c]) =>
-      c.options.map(o => ({ ...o, category: cat }))
-    );
-
-  if (!flatOptions.length) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    return;
-  }
-  drawWheelRotated(currentRotation % (2 * Math.PI), flatOptions);
+function setBackground(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    bgImageUrl = reader.result;
+    const img = document.getElementById("background-preview");
+    img.src = bgImageUrl;
+    img.classList.remove("hidden");
+    document.body.style.backgroundImage = `url(${bgImageUrl})`;
+    document.body.style.backgroundSize = "cover";
+  };
+  reader.readAsDataURL(file);
 }
 
-function spinWheel() {
-  const flatOptions = Object.entries(categories)
-    .filter(([_, c]) => c.active !== false)
-    .flatMap(([cat, c]) =>
-      c.options.map(o => ({ ...o, category: cat }))
-    );
-
-  const totalWeight = flatOptions.reduce((sum, o) => sum + o.weight, 0);
-  if (totalWeight === 0) return;
-
-  const angles = [];
-  let acc = 0;
-  for (let o of flatOptions) {
-    const angle = (o.weight / totalWeight) * 2 * Math.PI;
-    acc += angle;
-    angles.push(acc);
-  }
-
-  let duration = 3000;
-  const start = performance.now();
-  const extra = Math.random() * 2 * Math.PI;
-  const rotateStart = currentRotation;
-  const rotateTarget = currentRotation + 10 * Math.PI + extra;
-
-  if (sounds.spin) sounds.spin.cloneNode().play();
-
-  function animate(time) {
-    const t = Math.min((time - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3);
-    currentRotation = rotateStart + (rotateTarget - rotateStart) * eased;
-    drawWheelRotated(currentRotation % (2 * Math.PI), flatOptions);
-
-    if (t < 1) requestAnimationFrame(animate);
-    else {
-      const angle = (currentRotation % (2 * Math.PI));
-      let index = angles.findIndex(a => angle <= a);
-      if (index === -1) index = angles.length - 1;
-      lastWinnerIndex = index;
-      const winner = flatOptions[index];
-      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
-      if (sounds.win) sounds.win.cloneNode().play();
+function setWheelImage(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      wheelImage = img;
       drawWheel();
-    }
-  }
-
-  requestAnimationFrame(animate);
-}
-
-// 🎵 Sonido y música
-function loadSound(type, file) {
-  sounds[type] = new Audio(URL.createObjectURL(file));
-}
-
-function loadMusic(file) {
-  if (music) music.pause();
-  music = new Audio(URL.createObjectURL(file));
-  music.loop = true;
-  music.volume = 0.4;
-  music.play();
-}
-
-function stopMusic() {
-  if (music) music.pause();
-}
-
-// 📦 Guardado / Carga
-function exportWheel() {
-  const data = {
-    name: nameInput.value || "Ruleta",
-    emoji: emojiInput.value || "🎯",
-    categories
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `${data.name}.json`;
-  a.click();
-}
-
-function exportAllWheels() {
-  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "ruletas.json";
-  a.click();
-}
-
-function importWheels() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "application/json";
-  input.onchange = e => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const json = JSON.parse(reader.result);
-        if (Array.isArray(json)) wheels = json;
-        else wheels.push(json);
-        updateWheelList();
-      } catch (e) {
-        alert("Error al importar");
-      }
     };
-    reader.readAsText(e.target.files[0]);
+    img.src = reader.result;
   };
-  input.click();
-}
-
-function openCreateModal() {
-  const name = prompt("Nombre de la ruleta:");
-  const emoji = prompt("Emoji:");
-  if (!name || !emoji) return;
-  wheels.push({ name, emoji, categories: {} });
-  nameInput.value = name;
-  emojiInput.value = emoji;
-  updateHeader();
-  categories = {};
-  updateCategoryDisplay();
-  drawWheel();
-  updateWheelList();
-}
-
-function updateWheelList() {
-  const list = document.getElementById("wheelList");
-  list.innerHTML = "";
-  wheels.forEach((w, i) => {
-    const div = document.createElement("div");
-    div.className = "wheel-list-item";
-    div.innerHTML = `<button onclick="loadWheel(${i})">${w.emoji} ${w.name}</button>`;
-    list.appendChild(div);
-  });
-}
-
-function loadWheel(i) {
-  const w = wheels[i];
-  emojiInput.value = w.emoji;
-  nameInput.value = w.name;
-  updateHeader();
-  categories = JSON.parse(JSON.stringify(w.categories));
-  updateCategoryDisplay();
-  drawWheel();
+  reader.readAsDataURL(file);
 }
 </script>
-</body>
-</html>
