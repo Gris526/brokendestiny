@@ -271,9 +271,12 @@ function spinWheel() {
   const flat = Object.entries(categories)
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
-  if (total === 0) return;
+  if (total === 0) {
+    resultEl.textContent = "⚠️ No hay opciones válidas";
+    return;
+  }
 
-  // Paso 1: Elegimos ganador aleatorio
+  // 🎯 Elegir ganador
   let rand = Math.random() * total;
   let winnerIndex = 0;
   for (let i = 0; i < flat.length; i++) {
@@ -284,7 +287,7 @@ function spinWheel() {
     }
   }
 
-  // Paso 2: Calculamos ángulo objetivo
+  // 🧮 Calcular ángulo medio del ganador
   const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
   const midAngles = [];
   let acc = 0;
@@ -292,26 +295,29 @@ function spinWheel() {
     midAngles.push(acc + a / 2);
     acc += a;
   }
-
   const winnerAngle = midAngles[winnerIndex];
-  const offset = (3 * Math.PI / 2); // 270° top
-  const current = currentRotation % (2 * Math.PI);
-  const targetRotation = current + (10 * Math.PI + offset - winnerAngle);
-
-  const duration = 3000;
-  const start = performance.now();
+  const pointerAngle = 3 * Math.PI / 2; // 270° flecha hacia arriba
+  const spinCount = 5; // Vueltas completas antes de frenar
   const from = currentRotation;
-  const to = targetRotation;
+  const to = currentRotation + spinCount * 2 * Math.PI + (pointerAngle - winnerAngle);
+  const duration = 4000;
+  const start = performance.now();
 
   if (sounds.spin) sounds.spin.cloneNode().play();
 
-  function animate(time) {
-    const t = Math.min((time - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - t, 3);
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function animate(t) {
+    const elapsed = (t - start) / duration;
+    const eased = easeOutCubic(Math.min(elapsed, 1));
     currentRotation = from + (to - from) * eased;
     drawWheelRotated(currentRotation, flat);
-    if (t < 1) requestAnimationFrame(animate);
-    else {
+
+    if (elapsed < 1) {
+      requestAnimationFrame(animate);
+    } else {
       const winner = flat[winnerIndex];
       resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
@@ -321,6 +327,7 @@ function spinWheel() {
 
   requestAnimationFrame(animate);
 }
+
 
 function drawWheelRotated(angle, flat) {
   ctx.save();
