@@ -319,10 +319,16 @@ function spinWheel() {
       requestAnimationFrame(animate);
     } else {
       const winner = flat[winnerIndex];
-      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
+
+      // ✅ Mostrar texto grande encima de ruleta (opcional)
+      const result = document.getElementById("result");
+      result.innerHTML = `🏆 Ganador: <strong>${winner.text}</strong>`;
+      result.scrollIntoView({ behavior: "smooth" });
+
       if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
     }
+
   }
 
   requestAnimationFrame(animate);
