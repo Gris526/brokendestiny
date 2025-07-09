@@ -272,30 +272,56 @@ function spinWheel() {
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
   if (total === 0) return;
-  let acc = 0;
+
+  // Paso 1: Elegimos ganador aleatorio
+  let rand = Math.random() * total;
+  let winnerIndex = 0;
+  for (let i = 0; i < flat.length; i++) {
+    rand -= flat[i].weight;
+    if (rand <= 0) {
+      winnerIndex = i;
+      break;
+    }
+  }
+
+  // Paso 2: Calculamos ángulo objetivo
   const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
-  const ends = angles.map(a => (acc += a));
-  const randAngle = Math.random() * acc;
-  const index = ends.findIndex(a => randAngle <= a);
+  const midAngles = [];
+  let acc = 0;
+  for (let a of angles) {
+    midAngles.push(acc + a / 2);
+    acc += a;
+  }
+
+  const winnerAngle = midAngles[winnerIndex];
+  const offset = (3 * Math.PI / 2); // 270° top
+  const current = currentRotation % (2 * Math.PI);
+  const targetRotation = current + (10 * Math.PI + offset - winnerAngle);
+
+  const duration = 3000;
   const start = performance.now();
   const from = currentRotation;
-  const to = from + 10 * Math.PI + randAngle;
-  const duration = 3000;
+  const to = targetRotation;
+
   if (sounds.spin) sounds.spin.cloneNode().play();
-  function animate(t) {
-    const elapsed = Math.min((t - start) / duration, 1);
-    const eased = 1 - Math.pow(1 - elapsed, 3);
+
+  function animate(time) {
+    const t = Math.min((time - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
     currentRotation = from + (to - from) * eased;
     drawWheelRotated(currentRotation, flat);
-    if (elapsed < 1) requestAnimationFrame(animate);
+    if (t < 1) requestAnimationFrame(animate);
     else {
-      resultEl.textContent = `🏆 Ganador: ${flat[index].text}`;
+      const winner = flat[winnerIndex];
+      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
     }
   }
+
   requestAnimationFrame(animate);
 }
+
 function drawWheelRotated(angle, flat) {
   ctx.save();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
