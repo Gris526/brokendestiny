@@ -453,3 +453,123 @@ function spinFast() {
   }
 }
 </script>
+<script>
+// 🎵 Sonidos y música
+function loadSound(type, file) {
+  sounds[type] = new Audio(URL.createObjectURL(file));
+}
+function loadMusic(file) {
+  if (music) music.pause();
+  music = new Audio(URL.createObjectURL(file));
+  music.loop = true;
+  music.volume = 0.4;
+  music.play();
+}
+function stopMusic() {
+  if (music) music.pause();
+}
+
+// 📁 Exportar ruleta actual
+function exportWheel() {
+  const data = {
+    name: nameInput.value,
+    emoji: emojiInput.value,
+    categories
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ruleta-${data.name || 'ruleta'}.json`;
+  a.click();
+}
+
+// 📁 Exportar todas las ruletas
+function exportAllWheels() {
+  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ruletas.json";
+  a.click();
+}
+
+// 📥 Importar ruletas
+function importWheels() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) wheels = wheels.concat(data);
+        else wheels.push(data);
+        updateWheelList();
+      } catch (e) {
+        alert("Error al importar");
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+// 🧠 Crear nueva ruleta
+document.getElementById("newWheelBtn").onclick = () => {
+  const name = prompt("Nombre:");
+  const emoji = prompt("Emoji:");
+  if (!name || !emoji) return;
+  const newWheel = { name, emoji, categories: {} };
+  wheels.push(newWheel);
+  loadWheel(wheels.length - 1);
+  updateWheelList();
+};
+
+// 📋 Mostrar lista de ruletas
+function updateWheelList() {
+  const list = document.getElementById("wheelList");
+  list.innerHTML = "";
+  wheels.forEach((w, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-list-item";
+    div.innerHTML = `
+      <span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>`;
+    list.appendChild(div);
+  });
+}
+
+// 🧠 Cargar ruleta desde la lista
+function loadWheel(i) {
+  const w = wheels[i];
+  emojiInput.value = w.emoji;
+  nameInput.value = w.name;
+  updateHeader();
+  categories = structuredClone(w.categories);
+  updateCategoryDisplay();
+  drawWheel();
+}
+
+// 🗑 Eliminar ruleta
+function deleteWheel(i) {
+  if (confirm("¿Eliminar esta ruleta?")) {
+    wheels.splice(i, 1);
+    updateWheelList();
+    if (wheels[i]) loadWheel(i);
+    else if (wheels.length > 0) loadWheel(0);
+    else {
+      categories = {};
+      updateCategoryDisplay();
+      drawWheel();
+      resultEl.textContent = "🎯 Sin ruleta cargada";
+    }
+  }
+}
+
+// Activar botones
+document.getElementById("exportBtn").onclick = exportWheel;
+document.getElementById("exportAllBtn").onclick = exportAllWheels;
+document.getElementById("importBtn").onclick = importWheels;
+</script>
+</body>
+</html>
