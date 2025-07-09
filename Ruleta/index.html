@@ -270,13 +270,14 @@ function drawWheel() {
 function spinWheel() {
   const flat = Object.entries(categories)
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
+
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
   if (total === 0) {
     resultEl.textContent = "⚠️ No hay opciones válidas";
     return;
   }
 
-  // 🎯 Elegir ganador
+  // 1. Elegir opción ganadora
   let rand = Math.random() * total;
   let winnerIndex = 0;
   for (let i = 0; i < flat.length; i++) {
@@ -287,7 +288,7 @@ function spinWheel() {
     }
   }
 
-  // 🧮 Calcular ángulo medio del ganador
+  // 2. Calcular ángulo medio de cada opción
   const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
   const midAngles = [];
   let acc = 0;
@@ -295,23 +296,27 @@ function spinWheel() {
     midAngles.push(acc + a / 2);
     acc += a;
   }
+
+  // 3. Calcular rotación necesaria para llevar ángulo del ganador al ángulo 270° (arriba)
   const winnerAngle = midAngles[winnerIndex];
-  const pointerAngle = 3 * Math.PI / 2; // 270° flecha hacia arriba
-  const spinCount = 5; // Vueltas completas antes de frenar
+  const targetAngle = 3 * Math.PI / 2; // 270° en radianes
+  const rotations = 5; // Giros completos
+
   const from = currentRotation;
-  const to = currentRotation + spinCount * 2 * Math.PI + (pointerAngle - winnerAngle);
+  const to = from + rotations * 2 * Math.PI + (targetAngle - winnerAngle);
+
   const duration = 4000;
   const start = performance.now();
 
   if (sounds.spin) sounds.spin.cloneNode().play();
 
-  function easeOutCubic(t) {
+  function easeOut(t) {
     return 1 - Math.pow(1 - t, 3);
   }
 
-  function animate(t) {
-    const elapsed = (t - start) / duration;
-    const eased = easeOutCubic(Math.min(elapsed, 1));
+  function animate(time) {
+    const elapsed = Math.min((time - start) / duration, 1);
+    const eased = easeOut(elapsed);
     currentRotation = from + (to - from) * eased;
     drawWheelRotated(currentRotation, flat);
 
@@ -319,16 +324,10 @@ function spinWheel() {
       requestAnimationFrame(animate);
     } else {
       const winner = flat[winnerIndex];
-
-      // ✅ Mostrar texto grande encima de ruleta (opcional)
-      const result = document.getElementById("result");
-      result.innerHTML = `🏆 Ganador: <strong>${winner.text}</strong>`;
-      result.scrollIntoView({ behavior: "smooth" });
-
+      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
     }
-
   }
 
   requestAnimationFrame(animate);
