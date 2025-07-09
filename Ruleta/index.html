@@ -28,7 +28,6 @@
       color: var(--text);
       transition: background 0.3s, color 0.3s;
     }
-
     #menu-toggle, #gear-toggle {
       position: fixed;
       top: 10px;
@@ -107,10 +106,6 @@
       margin: 0.3rem 0;
     }
 
-    input[type="color"], input[type="file"] {
-      margin: 0.3rem 0;
-    }
-
     .wheel-list-item {
       background: #eee;
       padding: 0.4rem;
@@ -130,8 +125,6 @@
   </style>
 </head>
 <body data-theme="light">
-
-<!-- ☰ Menú lateral izquierdo -->
 <button id="menu-toggle">☰</button>
 <div id="sideMenu" class="side-menu">
   <h3>📂 Ruletas</h3>
@@ -143,18 +136,14 @@
   <div id="wheelList"></div>
 </div>
 
-<!-- ⚙️ Configuración de ruleta -->
+<!-- ⚙️ Configuración -->
 <button id="gear-toggle">⚙️</button>
 <div id="gearMenu" class="gear-menu">
   <h3>⚙️ Configuración</h3>
   <label>Nombre: <input id="nameInput" /></label>
   <label>Emoji: <input id="emojiInput" maxlength="2" /></label>
   <label><input type="checkbox" id="darkToggle"> Modo oscuro</label>
-  <button onclick="toggleFastMode()">⚡ Modo rápido</button>
   <button onclick="toggleOptionsPanel()">🎛 Mostrar/Ocultar opciones</button>
-  <hr>
-  <label>🎨 Fondo:</label><input type="file" accept="image/*" onchange="setBackground(this.files[0])" />
-  <label>🖼 Imagen ruleta personalizada:</label><input type="file" accept="image/*" onchange="setWheelImage(this.files[0])" />
   <hr>
   <label>🎵 Sonido giro:</label><input type="file" onchange="loadSound('spin', this.files[0])">
   <label>🏆 Sonido ganar:</label><input type="file" onchange="loadSound('win', this.files[0])">
@@ -162,43 +151,37 @@
   <button onclick="stopMusic()">⏹️ Detener música</button>
 </div>
 
-<!-- Cabecera central -->
-<div class="header">
-  <div id="emojiDisplay">🎯</div>
-  <div id="wheelTitle">Ruleta Pro</div>
-</div>
-<!-- 🎛 Editor lateral (se muestra desde ⚙️) -->
+<!-- 🧩 Editor de opciones -->
 <div id="optionsEditor" class="gear-menu hidden" style="right:auto; left:300px; width:320px;">
-  <h3>🧩 Categorías & Opciones</h3>
-  <textarea id="optionInput" placeholder="Ej:\n-Saludable-\nEnsalada:2\nPizza:1"></textarea>
+  <h3>Opciones</h3>
+  <textarea id="optionInput" placeholder="-Categoria-\nEjemplo:2"></textarea>
   <button onclick="addOptions()">Agregar</button>
   <div id="categoriesContainer"></div>
 </div>
 
 <!-- 🎯 Ruleta -->
+<div class="header">
+  <div id="emojiDisplay">🎯</div>
+  <div id="wheelTitle">Ruleta Pro</div>
+</div>
 <div class="main">
   <canvas id="wheel" width="400" height="400"></canvas>
   <div class="button-bar">
     <button onclick="spinWheel()">🎲 Girar</button>
-    <button onclick="spinFast()">⚡ Rápido</button>
   </div>
   <div id="result">🎯 Esperando...</div>
 </div>
-
 <script>
 let categories = {};
 let wheels = [];
 let currentRotation = 0;
-let lastWinnerIndex = -1;
-let sounds = {}, music = null;
-let fastMode = false;
-let wheelImage = null;
-let bgImageUrl = null;
+let sounds = {};
+let music = null;
 
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
+const resultEl = document.getElementById("result");
 
-// UI
 document.getElementById("menu-toggle").onclick = () =>
   document.getElementById("sideMenu").classList.toggle("open");
 document.getElementById("gear-toggle").onclick = () =>
@@ -212,15 +195,16 @@ function updateHeader() {
   document.getElementById("emojiDisplay").textContent = emojiInput.value || "🎯";
   document.getElementById("wheelTitle").textContent = nameInput.value || "Ruleta Pro";
 }
+
 function toggleOptionsPanel() {
   document.getElementById("optionsEditor").classList.toggle("hidden");
 }
-function toggleFastMode() {
-  fastMode = !fastMode;
-  alert(`Modo rápido: ${fastMode ? "activado" : "desactivado"}`);
+
+function randomColor() {
+  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
 }
 
-// ✅ Añadir opciones desde textarea
+// ✅ Añadir opciones por textarea
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
@@ -234,14 +218,14 @@ function addOptions() {
     if (/^-\w.*-$/.test(line)) {
       currentCategory = line.slice(1, -1).trim();
       if (!categories[currentCategory])
-        categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
+        categories[currentCategory] = { color: randomColor(), options: [] };
       continue;
     }
 
     const [text, weightStr] = line.split(":");
     const weight = parseFloat(weightStr) || 1;
     if (!categories[currentCategory])
-      categories[currentCategory] = { color: randomColor(), textColor: "#000", active: true, image: null, options: [] };
+      categories[currentCategory] = { color: randomColor(), options: [] };
     categories[currentCategory].options.push({ text: text.trim(), weight });
   }
 
@@ -250,18 +234,13 @@ function addOptions() {
   drawWheel();
 }
 
-// ✅ Mostrar opciones de cada categoría
+// ✅ Mostrar categorías y opciones
 function updateCategoryDisplay() {
   const container = document.getElementById("categoriesContainer");
   container.innerHTML = "";
   for (const cat in categories) {
     const block = document.createElement("div");
-    block.innerHTML = `
-      <h4>${cat}</h4>
-      Color: <input type="color" value="${categories[cat].color}" onchange="setCategoryColor('${cat}', this.value)">
-      Texto: <input type="color" value="${categories[cat].textColor}" onchange="setCategoryTextColor('${cat}', this.value)">
-      Imagen: <input type="file" accept="image/*" onchange="setCategoryImage('${cat}', this.files[0])">`;
-
+    block.innerHTML = `<h4>${cat}</h4>`;
     categories[cat].options.forEach((opt, i) => {
       const row = document.createElement("div");
       row.innerHTML = `
@@ -270,68 +249,21 @@ function updateCategoryDisplay() {
         <button onclick="removeOption('${cat}', ${i})">❌</button>`;
       block.appendChild(row);
     });
-
     container.appendChild(block);
   }
 }
+
 function removeOption(cat, i) {
   categories[cat].options.splice(i, 1);
   if (categories[cat].options.length === 0) delete categories[cat];
   updateCategoryDisplay();
   drawWheel();
 }
-function setCategoryColor(cat, color) {
-  categories[cat].color = color;
-  drawWheel();
-}
-function setCategoryTextColor(cat, color) {
-  categories[cat].textColor = color;
-  drawWheel();
-}
-function setCategoryImage(cat, file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    categories[cat].image = reader.result;
-    drawWheel();
-  };
-  reader.readAsDataURL(file);
-}
-function setBackground(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    bgImageUrl = reader.result;
-    document.body.style.backgroundImage = `url(${bgImageUrl})`;
-    document.body.style.backgroundSize = "cover";
-  };
-  reader.readAsDataURL(file);
-}
-function setWheelImage(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      wheelImage = img;
-      drawWheel();
-    };
-    img.src = reader.result;
-  };
-  reader.readAsDataURL(file);
-}
-function randomColor() {
-  return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
-}
-</script>
-<script>
-// 🎨 Dibujar ruleta completa
+
+// 🎯 Dibujo ruleta
 function drawWheel() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  if (wheelImage) {
-    ctx.drawImage(wheelImage, 0, 0, canvas.width, canvas.height);
-    return;
-  }
-
   const flatOptions = Object.entries(categories)
-    .filter(([_, cat]) => cat.active !== false)
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
 
   const totalWeight = flatOptions.reduce((sum, o) => sum + o.weight, 0);
@@ -340,63 +272,41 @@ function drawWheel() {
     return;
   }
 
-  let angleStart = 0;
-  flatOptions.forEach((opt, i) => {
-    const sliceAngle = (opt.weight / totalWeight) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, angleStart, angleStart + sliceAngle);
-    ctx.fillStyle = categories[opt.category].color;
-    ctx.fill();
-
-    ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(angleStart + sliceAngle / 2);
-    ctx.textAlign = "right";
-    ctx.fillStyle = categories[opt.category].textColor;
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText(opt.text, 180, 5);
-    ctx.restore();
-
-    angleStart += sliceAngle;
-  });
-}
-
-// 🎯 Dibujar ruleta girada (animación)
-function drawWheelRotated(angle, flatOptions) {
-  ctx.save();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(200, 200);
-  ctx.rotate(angle);
-  ctx.translate(-200, -200);
-  const totalWeight = flatOptions.reduce((sum, o) => sum + o.weight, 0);
-
   let start = 0;
-  flatOptions.forEach((opt, i) => {
-    const angleSize = (opt.weight / totalWeight) * 2 * Math.PI;
+  flatOptions.forEach(opt => {
+    const angle = (opt.weight / totalWeight) * 2 * Math.PI;
     ctx.beginPath();
     ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, start, start + angleSize);
+    ctx.arc(200, 200, 200, start, start + angle);
     ctx.fillStyle = categories[opt.category].color;
     ctx.fill();
+
     ctx.save();
     ctx.translate(200, 200);
-    ctx.rotate(start + angleSize / 2);
+    ctx.rotate(start + angle / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = categories[opt.category].textColor;
+    ctx.fillStyle = "#000";
     ctx.font = "bold 14px sans-serif";
     ctx.fillText(opt.text, 180, 5);
     ctx.restore();
-    start += angleSize;
+
+    start += angle;
   });
 
-  ctx.restore();
+  // Flecha roja
+  ctx.beginPath();
+  ctx.moveTo(200 - 10, 10);
+  ctx.lineTo(200 + 10, 10);
+  ctx.lineTo(200, 30);
+  ctx.closePath();
+  ctx.fillStyle = "red";
+  ctx.fill();
 }
-
-// 🌀 Animación normal
+</script>
+<script>
+// 🌀 Animación con easing
 function spinWheel() {
   const flat = Object.entries(categories)
-    .filter(([_, c]) => c.active !== false)
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
 
   const totalWeight = flat.reduce((sum, o) => sum + o.weight, 0);
@@ -420,7 +330,6 @@ function spinWheel() {
     const eased = 1 - Math.pow(1 - t, 3);
     currentRotation = rotateFrom + (rotateTo - rotateFrom) * eased;
     drawWheelRotated(currentRotation, flat);
-
     if (t < 1) requestAnimationFrame(animate);
     else {
       const winner = flat[index];
@@ -433,28 +342,47 @@ function spinWheel() {
   requestAnimationFrame(animate);
 }
 
-// ⚡ Giro rápido sin animación
-function spinFast() {
-  const flat = Object.entries(categories)
-    .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
-  const totalWeight = flat.reduce((sum, o) => sum + o.weight, 0);
-  if (totalWeight === 0) return;
+// Dibujo rotado durante animación
+function drawWheelRotated(angle, flatOptions) {
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(200, 200);
+  ctx.rotate(angle);
+  ctx.translate(-200, -200);
 
-  let rand = Math.random() * totalWeight;
-  for (let i = 0; i < flat.length; i++) {
-    rand -= flat[i].weight;
-    if (rand <= 0) {
-      const winner = flat[i];
-      resultEl.textContent = `⚡ Ganador: ${winner.text}`;
-      if (sounds.win) sounds.win.cloneNode().play();
-      drawWheel();
-      break;
-    }
-  }
+  const totalWeight = flatOptions.reduce((sum, o) => sum + o.weight, 0);
+  let start = 0;
+  flatOptions.forEach(opt => {
+    const angleSize = (opt.weight / totalWeight) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, start, start + angleSize);
+    ctx.fillStyle = categories[opt.category].color;
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(start + angleSize / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#000";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText(opt.text, 180, 5);
+    ctx.restore();
+
+    start += angleSize;
+  });
+
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(200 - 10, 10);
+  ctx.lineTo(200 + 10, 10);
+  ctx.lineTo(200, 30);
+  ctx.closePath();
+  ctx.fillStyle = "red";
+  ctx.fill();
 }
-</script>
-<script>
-// 🎵 Sonidos y música
+
+// Sonidos y música
 function loadSound(type, file) {
   sounds[type] = new Audio(URL.createObjectURL(file));
 }
@@ -469,7 +397,7 @@ function stopMusic() {
   if (music) music.pause();
 }
 
-// 📁 Exportar ruleta actual
+// Exportar una ruleta
 function exportWheel() {
   const data = {
     name: nameInput.value,
@@ -483,7 +411,7 @@ function exportWheel() {
   a.click();
 }
 
-// 📁 Exportar todas las ruletas
+// Exportar todas las ruletas
 function exportAllWheels() {
   const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
   const a = document.createElement("a");
@@ -492,7 +420,7 @@ function exportAllWheels() {
   a.click();
 }
 
-// 📥 Importar ruletas
+// Importar ruletas
 function importWheels() {
   const input = document.createElement("input");
   input.type = "file";
@@ -514,7 +442,7 @@ function importWheels() {
   input.click();
 }
 
-// 🧠 Crear nueva ruleta
+// Crear nueva ruleta
 document.getElementById("newWheelBtn").onclick = () => {
   const name = prompt("Nombre:");
   const emoji = prompt("Emoji:");
@@ -525,7 +453,7 @@ document.getElementById("newWheelBtn").onclick = () => {
   updateWheelList();
 };
 
-// 📋 Mostrar lista de ruletas
+// Listar ruletas
 function updateWheelList() {
   const list = document.getElementById("wheelList");
   list.innerHTML = "";
@@ -539,7 +467,7 @@ function updateWheelList() {
   });
 }
 
-// 🧠 Cargar ruleta desde la lista
+// Cargar ruleta
 function loadWheel(i) {
   const w = wheels[i];
   emojiInput.value = w.emoji;
@@ -550,7 +478,7 @@ function loadWheel(i) {
   drawWheel();
 }
 
-// 🗑 Eliminar ruleta
+// Borrar ruleta
 function deleteWheel(i) {
   if (confirm("¿Eliminar esta ruleta?")) {
     wheels.splice(i, 1);
@@ -566,7 +494,7 @@ function deleteWheel(i) {
   }
 }
 
-// Activar botones
+// Botones exportar
 document.getElementById("exportBtn").onclick = exportWheel;
 document.getElementById("exportAllBtn").onclick = exportAllWheels;
 document.getElementById("importBtn").onclick = importWheels;
