@@ -132,6 +132,7 @@
   <label><input type="checkbox" id="darkToggle"> Modo oscuro</label>
   <label>🎨 Fondo Color: <input type="color" id="bgColorInput" /></label>
   <label>🖼 Fondo Imagen: <input type="file" accept="image/*" onchange="setBackgroundImage(this.files[0])" /></label>
+  <label>🎯 Color flecha: <input type="color" value="#e60000" onchange="arrowColor = this.value; drawWheel()" /></label>
   <label>🎵 Sonido giro: <input type="file" onchange="loadSound('spin', this.files[0])"></label>
   <label>🏆 Sonido ganar: <input type="file" onchange="loadSound('win', this.files[0])"></label>
   <label>🎶 Música fondo: <input type="file" onchange="loadMusic(this.files[0])"></label>
@@ -158,6 +159,7 @@
 </div>
 
 <script>
+let arrowColor = "#e60000";
 let categories = {}, wheels = [], currentRotation = 0;
 let sounds = {}, music = null;
 const canvas = document.getElementById("wheel");
@@ -260,12 +262,13 @@ function drawWheel() {
     start += angle;
   });
   ctx.beginPath();
-  ctx.moveTo(200, 0);
-  ctx.lineTo(190, 20);
-  ctx.lineTo(210, 20);
+  ctx.moveTo(200, 20);     // Punta hacia abajo
+  ctx.lineTo(190, 0);      // Izquierda
+  ctx.lineTo(210, 0);      // Derecha
   ctx.closePath();
-  ctx.fillStyle = "red";
+  ctx.fillStyle = arrowColor || "red";
   ctx.fill();
+
 }
 function spinWheel() {
   const flat = Object.entries(categories)
@@ -358,14 +361,14 @@ function drawWheelRotated(angle, flat) {
     ctx.restore();
     start += ang;
   });
-  ctx.restore();
   ctx.beginPath();
-  ctx.moveTo(200, 0);
-  ctx.lineTo(190, 20);
-  ctx.lineTo(210, 20);
+  ctx.moveTo(200, 20);     // Punta hacia abajo
+  ctx.lineTo(190, 0);      // Izquierda
+  ctx.lineTo(210, 0);      // Derecha
   ctx.closePath();
-  ctx.fillStyle = "red";
+  ctx.fillStyle = arrowColor || "red";
   ctx.fill();
+
 }
 function loadSound(type, file) {
   sounds[type] = new Audio(URL.createObjectURL(file));
