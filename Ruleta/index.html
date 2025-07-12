@@ -135,10 +135,10 @@
   <label>🎵 Sonido giro: <input type="file" onchange="loadSound('spin', this.files[0])"></label>
   <label>🏆 Sonido ganar: <input type="file" onchange="loadSound('win', this.files[0])"></label>
   <label>🎶 Música fondo: <input type="file" onchange="loadMusic(this.files[0])"></label>
-  <label>🎯 Color flecha: <input type="color" value="#e60000" onchange="arrowColor = this.value; drawWheel()" /></label>
   <button onclick="stopMusic()">⏹️ Detener música</button>
   <button onclick="toggleOptionsPanel()">🎛 Mostrar/Ocultar opciones</button>
 </div>
+
 <!-- Editor de opciones -->
 <div id="optionsEditor" class="gear-menu hidden" style="right:auto; left:300px; width:320px;">
   <h3>Opciones</h3>
@@ -147,13 +147,10 @@
   <div id="categoriesContainer"></div>
 </div>
 
-<!-- Encabezado visual -->
 <div class="header">
   <div id="emojiDisplay">🎯</div>
   <div id="wheelTitle">Ruleta Pro</div>
 </div>
-
-<!-- Canvas principal -->
 <div class="main">
   <canvas id="wheel" width="400" height="400"></canvas>
   <div class="button-bar"><button onclick="spinWheel()">🎲 Girar</button></div>
@@ -161,7 +158,6 @@
 </div>
 
 <script>
-let arrowColor = "#e60000";
 let categories = {}, wheels = [], currentRotation = 0;
 let sounds = {}, music = null;
 const canvas = document.getElementById("wheel");
@@ -177,20 +173,16 @@ document.getElementById("bgColorInput").onchange = e =>
   document.body.style.background = e.target.value;
 document.getElementById("nameInput").oninput = updateHeader;
 document.getElementById("emojiInput").oninput = updateHeader;
-
 function updateHeader() {
   document.getElementById("emojiDisplay").textContent = emojiInput.value || "🎯";
   document.getElementById("wheelTitle").textContent = nameInput.value || "Ruleta Pro";
 }
-
 function toggleOptionsPanel() {
   document.getElementById("optionsEditor").classList.toggle("hidden");
 }
-<script>
 function randomColor() {
   return '#' + Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, '0');
 }
-
 function addOptions() {
   const input = document.getElementById("optionInput").value.trim();
   if (!input) return;
@@ -214,7 +206,6 @@ function addOptions() {
   document.getElementById("optionInput").value = "";
   updateCategoryDisplay(); drawWheel();
 }
-
 function updateCategoryDisplay() {
   const container = document.getElementById("categoriesContainer");
   container.innerHTML = "";
@@ -233,80 +224,60 @@ function updateCategoryDisplay() {
     container.appendChild(block);
   }
 }
-
 function removeOption(cat, i) {
   categories[cat].options.splice(i, 1);
   if (categories[cat].options.length === 0) delete categories[cat];
   updateCategoryDisplay(); drawWheel();
 }
-
 function setCategoryColor(cat, color) {
   categories[cat].color = color; drawWheel();
 }
 function setCategoryTextColor(cat, color) {
   categories[cat].textColor = color; drawWheel();
 }
-
 function drawWheel() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   const flat = Object.entries(categories).flatMap(([cat, c]) =>
     c.options.map(o => ({ ...o, category: cat })));
-  drawWheelRotated(currentRotation, flat);
-}
-
-function drawWheelRotated(angle, flat) {
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
-  const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.translate(200, 200);
-  ctx.rotate(angle);
-  ctx.translate(-200, -200);
-
+  if (total === 0) return resultEl.textContent = "🎯 Esperando...";
   let start = 0;
-  for (let i = 0; i < flat.length; i++) {
-    const opt = flat[i];
-    const category = categories[opt.category];
-    const ang = angles[i];
-
+  flat.forEach(opt => {
+    const angle = (opt.weight / total) * 2 * Math.PI;
     ctx.beginPath();
     ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, start, start + ang);
-    ctx.fillStyle = category.color;
+    ctx.arc(200, 200, 200, start, start + angle);
+    ctx.fillStyle = categories[opt.category].color;
     ctx.fill();
-
     ctx.save();
     ctx.translate(200, 200);
-    ctx.rotate(start + ang / 2);
+    ctx.rotate(start + angle / 2);
     ctx.textAlign = "right";
-    ctx.fillStyle = category.textColor;
+    ctx.fillStyle = categories[opt.category].textColor;
     ctx.font = "bold 14px sans-serif";
     ctx.fillText(opt.text, 180, 5);
     ctx.restore();
-
-    start += ang;
-  }
-
-  ctx.restore();
-
-  // Flecha arriba apuntando hacia abajo
+    start += angle;
+  });
   ctx.beginPath();
-  ctx.moveTo(200, 20);     // Punta hacia abajo
-  ctx.lineTo(190, 0);      // Izquierda
-  ctx.lineTo(210, 0);      // Derecha
+  ctx.moveTo(200, 0);
+  ctx.lineTo(190, 20);
+  ctx.lineTo(210, 20);
   ctx.closePath();
-  ctx.fillStyle = arrowColor;
+  ctx.fillStyle = "red";
   ctx.fill();
 }
-
 function spinWheel() {
   const flat = Object.entries(categories)
     .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
 
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
-  if (total === 0) return resultEl.textContent = "⚠️ Sin opciones";
+  if (total === 0) {
+    resultEl.textContent = "⚠️ No hay opciones válidas";
+    return;
+  }
 
-  // Ganador aleatorio
+  // 1. Elegir opción ganadora
   let rand = Math.random() * total;
   let winnerIndex = 0;
   for (let i = 0; i < flat.length; i++) {
@@ -317,19 +288,23 @@ function spinWheel() {
     }
   }
 
+  // 2. Calcular ángulo medio de cada opción
   const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
+  const midAngles = [];
   let acc = 0;
-  const midAngles = angles.map(a => {
-    const mid = acc + a / 2;
+  for (let a of angles) {
+    midAngles.push(acc + a / 2);
     acc += a;
-    return mid;
-  });
+  }
 
+  // 3. Calcular rotación necesaria para llevar ángulo del ganador al ángulo 270° (arriba)
   const winnerAngle = midAngles[winnerIndex];
-  const pointerAngle = -Math.PI / 2; // 12 en punto
-  const rotations = 5;
+  const targetAngle = 3 * Math.PI / 2; // 270° en radianes
+  const rotations = 5; // Giros completos
+
   const from = currentRotation;
-  const to = from + rotations * 2 * Math.PI + (pointerAngle - winnerAngle);
+  const to = from + rotations * 2 * Math.PI + (targetAngle - winnerAngle);
+
   const duration = 4000;
   const start = performance.now();
 
@@ -340,14 +315,16 @@ function spinWheel() {
   }
 
   function animate(time) {
-    const t = (time - start) / duration;
-    const eased = easeOut(Math.min(t, 1));
+    const elapsed = Math.min((time - start) / duration, 1);
+    const eased = easeOut(elapsed);
     currentRotation = from + (to - from) * eased;
     drawWheelRotated(currentRotation, flat);
-    if (t < 1) {
+
+    if (elapsed < 1) {
       requestAnimationFrame(animate);
     } else {
-      resultEl.textContent = `🏆 Ganador: ${flat[winnerIndex].text}`;
+      const winner = flat[winnerIndex];
+      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
     }
@@ -356,6 +333,40 @@ function spinWheel() {
   requestAnimationFrame(animate);
 }
 
+
+function drawWheelRotated(angle, flat) {
+  ctx.save();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.translate(200, 200); ctx.rotate(angle);
+  ctx.translate(-200, -200);
+  const total = flat.reduce((sum, o) => sum + o.weight, 0);
+  let start = 0;
+  flat.forEach(opt => {
+    const ang = (opt.weight / total) * 2 * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(200, 200);
+    ctx.arc(200, 200, 200, start, start + ang);
+    ctx.fillStyle = categories[opt.category].color;
+    ctx.fill();
+    ctx.save();
+    ctx.translate(200, 200);
+    ctx.rotate(start + ang / 2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = categories[opt.category].textColor;
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText(opt.text, 180, 5);
+    ctx.restore();
+    start += ang;
+  });
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(200, 0);
+  ctx.lineTo(190, 20);
+  ctx.lineTo(210, 20);
+  ctx.closePath();
+  ctx.fillStyle = "red";
+  ctx.fill();
+}
 function loadSound(type, file) {
   sounds[type] = new Audio(URL.createObjectURL(file));
 }
@@ -375,9 +386,85 @@ function setBackgroundImage(file) {
   };
   reader.readAsDataURL(file);
 }
-
-// Inicial
-drawWheel();
+document.getElementById("newWheelBtn").onclick = () => {
+  const name = `Ruleta sin nombre ${wheels.length + 1}`;
+  const emoji = "🎯";
+  const newWheel = { name, emoji, categories: {} };
+  wheels.push(newWheel);
+  loadWheel(wheels.length - 1);
+  updateWheelList();
+};
+document.getElementById("exportBtn").onclick = exportWheel;
+document.getElementById("exportAllBtn").onclick = exportAllWheels;
+document.getElementById("importBtn").onclick = importWheels;
+function exportWheel() {
+  const data = { name: nameInput.value, emoji: emojiInput.value, categories };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `ruleta-${data.name || 'ruleta'}.json`;
+  a.click();
+}
+function exportAllWheels() {
+  const blob = new Blob([JSON.stringify(wheels, null, 2)], { type: 'application/json' });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "ruletas.json";
+  a.click();
+}
+function importWheels() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (Array.isArray(data)) wheels = wheels.concat(data);
+        else wheels.push(data);
+        updateWheelList();
+      } catch (e) { alert("Error al importar"); }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+function updateWheelList() {
+  const list = document.getElementById("wheelList");
+  list.innerHTML = "";
+  wheels.forEach((w, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-list-item";
+    div.innerHTML = `
+      <span onclick="loadWheel(${i})">${w.emoji} ${w.name}</span>
+      <button onclick="deleteWheel(${i})">🗑️</button>`;
+    list.appendChild(div);
+  });
+}
+function loadWheel(i) {
+  const w = wheels[i];
+  emojiInput.value = w.emoji;
+  nameInput.value = w.name;
+  updateHeader();
+  categories = structuredClone(w.categories);
+  updateCategoryDisplay();
+  drawWheel();
+}
+function deleteWheel(i) {
+  if (confirm("¿Eliminar esta ruleta?")) {
+    wheels.splice(i, 1);
+    updateWheelList();
+    if (wheels[i]) loadWheel(i);
+    else if (wheels.length > 0) loadWheel(0);
+    else {
+      categories = {};
+      updateCategoryDisplay();
+      drawWheel();
+      resultEl.textContent = "🎯 Sin ruleta cargada";
+    }
+  }
+}
 </script>
 </body>
 </html>
