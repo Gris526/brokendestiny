@@ -164,6 +164,8 @@ let categories = {}, wheels = [], currentRotation = 0;
 let sounds = {}, music = null;
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
+  const resultEl = document.getElementById("result");
+
 
 document.getElementById("menu-toggle").onclick = () =>
   document.getElementById("sideMenu").classList.toggle("open");
@@ -238,38 +240,12 @@ function setCategoryTextColor(cat, color) {
   categories[cat].textColor = color; drawWheel();
 }
 function drawWheel() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
   const flat = Object.entries(categories).flatMap(([cat, c]) =>
-    c.options.map(o => ({ ...o, category: cat })));
-  const total = flat.reduce((sum, o) => sum + o.weight, 0);
-  if (total === 0) return resultEl.textContent = "🎯 Esperando...";
-  let start = 0;
-  flat.forEach(opt => {
-    const angle = (opt.weight / total) * 2 * Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(200, 200);
-    ctx.arc(200, 200, 200, start, start + angle);
-    ctx.fillStyle = categories[opt.category].color;
-    ctx.fill();
-    ctx.save();
-    ctx.translate(200, 200);
-    ctx.rotate(start + angle / 2);
-    ctx.textAlign = "right";
-    ctx.fillStyle = categories[opt.category].textColor;
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillText(opt.text, 180, 5);
-    ctx.restore();
-    start += angle;
-  });
-  ctx.beginPath();
-  ctx.moveTo(200, 20);     // Punta hacia abajo
-  ctx.lineTo(190, 0);      // Izquierda
-  ctx.lineTo(210, 0);      // Derecha
-  ctx.closePath();
-  ctx.fillStyle = arrowColor || "red";
-  ctx.fill();
-
+    c.options.map(o => ({ ...o, category: cat }))
+  );
+  drawWheelRotated(currentRotation, flat);
 }
+  
 function spinWheel() {
   const flat = Object.entries(categories)
     .flatMap(([cat, c]) =>
@@ -342,13 +318,15 @@ function spinWheel() {
 
 
 function drawWheelRotated(angle, flat) {
-  ctx.save();
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.translate(200, 200); ctx.rotate(angle);
+  ctx.save();
+  ctx.translate(200, 200);
+  ctx.rotate(angle);
   ctx.translate(-200, -200);
+
   const total = flat.reduce((sum, o) => sum + o.weight, 0);
   let start = 0;
-  flat.forEach(opt => {
+  for (const opt of flat) {
     const ang = (opt.weight / total) * 2 * Math.PI;
     ctx.beginPath();
     ctx.moveTo(200, 200);
@@ -364,10 +342,19 @@ function drawWheelRotated(angle, flat) {
     ctx.fillText(opt.text, 180, 5);
     ctx.restore();
     start += ang;
-  });
+  }
+  ctx.restore();
 
-
+  // Flecha fuera del giro, apuntando hacia abajo
+  ctx.beginPath();
+  ctx.moveTo(200, 20);
+  ctx.lineTo(190, 0);
+  ctx.lineTo(210, 0);
+  ctx.closePath();
+  ctx.fillStyle = arrowColor;
+  ctx.fill();
 }
+
 function loadSound(type, file) {
   sounds[type] = new Audio(URL.createObjectURL(file));
 }
