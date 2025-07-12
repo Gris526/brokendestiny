@@ -247,48 +247,52 @@ function drawWheel() {
 }
   
 function spinWheel() {
-  const flat = Object.entries(categories)
-    .flatMap(([cat, c]) =>
-      c.options.flatMap(o => Array(o.weight).fill({ ...o, category: cat }))
-    );
+  // 🎯 1. Expandir lista por peso para elegir aleatoriamente
+  const expanded = [];
+  for (const [cat, c] of Object.entries(categories)) {
+    for (const opt of c.options) {
+      for (let i = 0; i < opt.weight; i++) {
+        expanded.push({ ...opt, category: cat });
+      }
+    }
+  }
 
-  if (flat.length === 0) {
+  if (expanded.length === 0) {
     resultEl.textContent = "⚠️ No hay opciones válidas";
     return;
   }
 
-  // 🎯 1. Elegir ganador real desde la lista
-  const winner = flat[Math.floor(Math.random() * flat.length)];
+  // ✅ 2. Elegir ganador real desde la lista expandida
+  const winner = expanded[Math.floor(Math.random() * expanded.length)];
 
-  // 🧮 2. Recalcular la lista sin expansión
-  const fullList = Object.entries(categories)
-    .flatMap(([cat, c]) =>
-      c.options.map(o => ({ ...o, category: cat }))
-    );
+  // ✅ 3. Calcular ángulos exactos desde flatList normal
+  const flatList = Object.entries(categories).flatMap(([cat, c]) =>
+    c.options.map(o => ({ ...o, category: cat }))
+  );
 
-  const total = fullList.reduce((sum, o) => sum + o.weight, 0);
+  const totalWeight = flatList.reduce((sum, o) => sum + o.weight, 0);
+  let start = 0;
+  let winnerMid = 0;
 
-  // 🔎 3. Calcular ángulo central del ganador
-  let startAngle = 0;
-  let winnerCenterAngle = 0;
-
-  for (const opt of fullList) {
-    const angle = (opt.weight / total) * 2 * Math.PI;
+  for (const opt of flatList) {
+    const angle = (opt.weight / totalWeight) * 2 * Math.PI;
     if (opt.text === winner.text && opt.category === winner.category) {
-      winnerCenterAngle = startAngle + angle / 2;
+      winnerMid = start + angle / 2;
       break;
     }
-    startAngle += angle;
+    start += angle;
   }
 
-  // 🔁 4. Calcular rotación total
+  // 🌀 4. Calcular rotación hacia arriba (ángulo 0)
   const fullRotations = 5 * 2 * Math.PI;
-  const angleToAlign = 0; // Ángulo 0 (arriba)
+  const targetAngle = 0; // arriba del canvas
+  const delta = targetAngle - winnerMid;
   const from = currentRotation;
-  const to = from + fullRotations + (angleToAlign - winnerCenterAngle);
+  const to = from + fullRotations + delta;
 
+  // 🕒 5. Animación con ease-out
   const duration = 4000;
-  const start = performance.now();
+  const startTime = performance.now();
 
   if (sounds.spin) sounds.spin.cloneNode().play();
 
@@ -297,25 +301,22 @@ function spinWheel() {
   }
 
   function animate(time) {
-    const t = (time - start) / duration;
+    const t = (time - startTime) / duration;
     const eased = easeOut(Math.min(t, 1));
     currentRotation = from + (to - from) * eased;
-    drawWheelRotated(currentRotation, fullList);
+    drawWheelRotated(currentRotation, flatList);
 
     if (t < 1) {
       requestAnimationFrame(animate);
     } else {
       resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
-      drawWheel();
+      drawWheel(); // Redibuja final
     }
   }
 
   requestAnimationFrame(animate);
 }
-
-
-
 
 function drawWheelRotated(angle, flat) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
