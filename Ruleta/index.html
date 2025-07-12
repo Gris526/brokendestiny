@@ -364,13 +364,7 @@ function drawWheelRotated(angle, flat) {
     ctx.restore();
     start += ang;
   });
-  ctx.beginPath();
-  ctx.moveTo(200, 20);     // Punta hacia abajo
-  ctx.lineTo(190, 0);      // Izquierda
-  ctx.lineTo(210, 0);      // Derecha
-  ctx.closePath();
-  ctx.fillStyle = arrowColor || "red";
-  ctx.fill();
+
 
 }
 function loadSound(type, file) {
