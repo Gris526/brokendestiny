@@ -280,7 +280,7 @@ function spinWheel() {
     return;
   }
 
-  // 1. Elegir opción ganadora
+  // 🎯 1. Elegir opción ganadora
   let rand = Math.random() * total;
   let winnerIndex = 0;
   for (let i = 0; i < flat.length; i++) {
@@ -291,22 +291,24 @@ function spinWheel() {
     }
   }
 
-  // 2. Calcular ángulo medio de cada opción
+  // 🎯 2. Calcular ángulos de cada sector
   const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
-  const midAngles = [];
-  let acc = 0;
-  for (let a of angles) {
-    midAngles.push(acc + a / 2);
-    acc += a;
+  let startAngle = 0;
+  let winnerStart = 0, winnerEnd = 0;
+  for (let i = 0; i <= winnerIndex; i++) {
+    if (i === winnerIndex) {
+      winnerStart = startAngle;
+      winnerEnd = startAngle + angles[i];
+      break;
+    }
+    startAngle += angles[i];
   }
 
-  // 3. Calcular rotación necesaria para llevar ángulo del ganador al ángulo 270° (arriba)
-  const winnerAngle = midAngles[winnerIndex];
-  const targetAngle = 3 * Math.PI / 2; // 270° en radianes
-  const rotations = 5; // Giros completos
-
+  const winnerCenter = (winnerStart + winnerEnd) / 2;
+  const targetAngle = 3 * Math.PI / 2; // 270°, hacia arriba en canvas
+  const rotations = 6;
   const from = currentRotation;
-  const to = from + rotations * 2 * Math.PI + (targetAngle - winnerAngle);
+  const to = from + rotations * 2 * Math.PI + (targetAngle - winnerCenter);
 
   const duration = 4000;
   const start = performance.now();
@@ -318,12 +320,12 @@ function spinWheel() {
   }
 
   function animate(time) {
-    const elapsed = Math.min((time - start) / duration, 1);
-    const eased = easeOut(elapsed);
+    const t = (time - start) / duration;
+    const eased = easeOut(Math.min(t, 1));
     currentRotation = from + (to - from) * eased;
     drawWheelRotated(currentRotation, flat);
 
-    if (elapsed < 1) {
+    if (t < 1) {
       requestAnimationFrame(animate);
     } else {
       const winner = flat[winnerIndex];
@@ -335,6 +337,7 @@ function spinWheel() {
 
   requestAnimationFrame(animate);
 }
+
 
 
 function drawWheelRotated(angle, flat) {
