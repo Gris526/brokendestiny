@@ -272,43 +272,44 @@ function drawWheel() {
 }
 function spinWheel() {
   const flat = Object.entries(categories)
-    .flatMap(([cat, c]) => c.options.map(o => ({ ...o, category: cat })));
+    .flatMap(([cat, c]) =>
+      c.options.flatMap(o => Array(o.weight).fill({ ...o, category: cat }))
+    );
 
-  const total = flat.reduce((sum, o) => sum + o.weight, 0);
-  if (total === 0) {
+  if (flat.length === 0) {
     resultEl.textContent = "⚠️ No hay opciones válidas";
     return;
   }
 
-  // 🎯 1. Elegir opción ganadora
-  let rand = Math.random() * total;
-  let winnerIndex = 0;
-  for (let i = 0; i < flat.length; i++) {
-    rand -= flat[i].weight;
-    if (rand <= 0) {
-      winnerIndex = i;
-      break;
-    }
-  }
+  // 🎯 1. Elegir ganador real desde la lista
+  const winner = flat[Math.floor(Math.random() * flat.length)];
 
-  // 🎯 2. Calcular ángulos de cada sector
-  const angles = flat.map(o => (o.weight / total) * 2 * Math.PI);
+  // 🧮 2. Recalcular la lista sin expansión
+  const fullList = Object.entries(categories)
+    .flatMap(([cat, c]) =>
+      c.options.map(o => ({ ...o, category: cat }))
+    );
+
+  const total = fullList.reduce((sum, o) => sum + o.weight, 0);
+
+  // 🔎 3. Calcular ángulo central del ganador
   let startAngle = 0;
-  let winnerStart = 0, winnerEnd = 0;
-  for (let i = 0; i <= winnerIndex; i++) {
-    if (i === winnerIndex) {
-      winnerStart = startAngle;
-      winnerEnd = startAngle + angles[i];
+  let winnerCenterAngle = 0;
+
+  for (const opt of fullList) {
+    const angle = (opt.weight / total) * 2 * Math.PI;
+    if (opt.text === winner.text && opt.category === winner.category) {
+      winnerCenterAngle = startAngle + angle / 2;
       break;
     }
-    startAngle += angles[i];
+    startAngle += angle;
   }
 
-  const winnerCenter = (winnerStart + winnerEnd) / 2;
-  const targetAngle = 3 * Math.PI / 2; // 270°, hacia arriba en canvas
-  const rotations = 6;
+  // 🔁 4. Calcular rotación total
+  const fullRotations = 5 * 2 * Math.PI;
+  const angleToAlign = 0; // Ángulo 0 (arriba)
   const from = currentRotation;
-  const to = from + rotations * 2 * Math.PI + (targetAngle - winnerCenter);
+  const to = from + fullRotations + (angleToAlign - winnerCenterAngle);
 
   const duration = 4000;
   const start = performance.now();
@@ -323,12 +324,11 @@ function spinWheel() {
     const t = (time - start) / duration;
     const eased = easeOut(Math.min(t, 1));
     currentRotation = from + (to - from) * eased;
-    drawWheelRotated(currentRotation, flat);
+    drawWheelRotated(currentRotation, fullList);
 
     if (t < 1) {
       requestAnimationFrame(animate);
     } else {
-      const winner = flat[winnerIndex];
       resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
       drawWheel();
@@ -337,6 +337,7 @@ function spinWheel() {
 
   requestAnimationFrame(animate);
 }
+
 
 
 
