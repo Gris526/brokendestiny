@@ -247,7 +247,6 @@ function drawWheel() {
 }
   
 function spinWheel() {
-  // 🎯 1. Expandir lista por peso para elegir aleatoriamente
   const expanded = [];
   for (const [cat, c] of Object.entries(categories)) {
     for (const opt of c.options) {
@@ -262,39 +261,41 @@ function spinWheel() {
     return;
   }
 
-  // ✅ 2. Elegir ganador real desde la lista expandida
   const winner = expanded[Math.floor(Math.random() * expanded.length)];
 
-  // ✅ 3. Calcular ángulos exactos desde flatList normal
+  // 1. Calcular ángulos por peso
   const flatList = Object.entries(categories).flatMap(([cat, c]) =>
     c.options.map(o => ({ ...o, category: cat }))
   );
-
   const totalWeight = flatList.reduce((sum, o) => sum + o.weight, 0);
-  let start = 0;
-  let winnerMid = 0;
+  const sectorAngles = [];
+  let currentAngle = 0;
 
   for (const opt of flatList) {
-    const angle = (opt.weight / totalWeight) * 2 * Math.PI;
-    if (opt.text === winner.text && opt.category === winner.category) {
-      winnerMid = start + angle / 2;
-      break;
-    }
-    start += angle;
+    const angleSize = (opt.weight / totalWeight) * 2 * Math.PI;
+    const midAngle = currentAngle + angleSize / 2;
+    sectorAngles.push({ opt, start: currentAngle, end: currentAngle + angleSize, mid: midAngle });
+    currentAngle += angleSize;
   }
 
-  // 🌀 4. Calcular rotación hacia arriba (ángulo 0)
-  const fullRotations = 5 * 2 * Math.PI;
-  const targetAngle = 0; // arriba del canvas
-  let delta = targetAngle - winnerMid;
-  if (delta < 0) delta += 2 * Math.PI;
-  const from = currentRotation;
-  const to = from + fullRotations + delta;
+  // 2. Encontrar el ángulo del centro del sector del ganador
+  const winnerSector = sectorAngles.find(
+    s => s.opt.text === winner.text && s.opt.category === winner.category
+  );
+  const winnerAngle = winnerSector.mid;
 
-  // 🕒 5. Animación con ease-out
+  // 3. Rotar de forma que el ángulo medio del ganador llegue a 0 (flecha arriba)
+  const fullSpins = 5 * 2 * Math.PI;
+  const from = currentRotation % (2 * Math.PI);
+  let to = fullSpins + winnerAngle; // girar hasta que este sector quede en 0
+
+  // Ajustar delta para que quede exacto
+  const delta = 2 * Math.PI - winnerAngle;
+  to = from + fullSpins + delta;
+
+  // 4. Animación
   const duration = 4000;
   const startTime = performance.now();
-
   if (sounds.spin) sounds.spin.cloneNode().play();
 
   function easeOut(t) {
@@ -312,12 +313,13 @@ function spinWheel() {
     } else {
       resultEl.textContent = `🏆 Ganador: ${winner.text}`;
       if (sounds.win) sounds.win.cloneNode().play();
-      drawWheel(); // Redibuja final
+      drawWheel(); // Redibuja limpio
     }
   }
 
   requestAnimationFrame(animate);
 }
+
 
 function drawWheelRotated(angle, flat) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
