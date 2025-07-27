@@ -247,55 +247,33 @@ function drawWheel() {
 }
   
 function spinWheel() {
-  const expanded = [];
-  for (const [cat, c] of Object.entries(categories)) {
-    for (const opt of c.options) {
-      for (let i = 0; i < opt.weight; i++) {
-        expanded.push({ ...opt, category: cat });
-      }
-    }
-  }
-
-  if (expanded.length === 0) {
-    resultEl.textContent = "⚠️ No hay opciones válidas";
-    return;
-  }
-
-  const winner = expanded[Math.floor(Math.random() * expanded.length)];
-
-  // 1. Calcular ángulos por peso
   const flatList = Object.entries(categories).flatMap(([cat, c]) =>
     c.options.map(o => ({ ...o, category: cat }))
   );
+
   const totalWeight = flatList.reduce((sum, o) => sum + o.weight, 0);
-  const sectorAngles = [];
-  let currentAngle = 0;
+  const sectors = [];
+  let angleStart = 0;
 
   for (const opt of flatList) {
-    const angleSize = (opt.weight / totalWeight) * 2 * Math.PI;
-    const midAngle = currentAngle + angleSize / 2;
-    sectorAngles.push({ opt, start: currentAngle, end: currentAngle + angleSize, mid: midAngle });
-    currentAngle += angleSize;
+    const angle = (opt.weight / totalWeight) * 2 * Math.PI;
+    sectors.push({
+      opt,
+      start: angleStart,
+      end: angleStart + angle
+    });
+    angleStart += angle;
   }
 
-  // 2. Encontrar el ángulo del centro del sector del ganador
-  const winnerSector = sectorAngles.find(
-    s => s.opt.text === winner.text && s.opt.category === winner.category
-  );
-  const winnerAngle = winnerSector.mid;
+  // 1. Girar aleatoriamente: 5 vueltas + ángulo aleatorio
+  const from = currentRotation;
+  const fullRotations = 5 * 2 * Math.PI;
+  const randomAngle = Math.random() * 2 * Math.PI;
+  const to = from + fullRotations + randomAngle;
 
-  // 3. Rotar de forma que el ángulo medio del ganador llegue a 0 (flecha arriba)
-  const fullSpins = 5 * 2 * Math.PI;
-  const from = currentRotation % (2 * Math.PI);
-  let to = fullSpins + winnerAngle; // girar hasta que este sector quede en 0
-
-  // Ajustar delta para que quede exacto
-  const delta = 2 * Math.PI - winnerAngle;
-  to = from + fullSpins + delta;
-
-  // 4. Animación
   const duration = 4000;
   const startTime = performance.now();
+
   if (sounds.spin) sounds.spin.cloneNode().play();
 
   function easeOut(t) {
@@ -311,14 +289,30 @@ function spinWheel() {
     if (t < 1) {
       requestAnimationFrame(animate);
     } else {
-      resultEl.textContent = `🏆 Ganador: ${winner.text}`;
-      if (sounds.win) sounds.win.cloneNode().play();
-      drawWheel(); // Redibuja limpio
+      // 2. Calcular ángulo real final (normalizado)
+      const finalAngle = (currentRotation % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+
+      // 3. Buscar sector que contiene ángulo 0 (considerando rotación)
+      const angleAtTop = (2 * Math.PI - finalAngle) % (2 * Math.PI);
+
+      const winner = sectors.find(
+        s => angleAtTop >= s.start && angleAtTop < s.end
+      )?.opt;
+
+      if (winner) {
+        resultEl.textContent = `🏆 Ganador: ${winner.text}`;
+        if (sounds.win) sounds.win.cloneNode().play();
+      } else {
+        resultEl.textContent = "❓ No se pudo determinar el ganador";
+      }
+
+      drawWheel(); // Redibuja final
     }
   }
 
   requestAnimationFrame(animate);
 }
+
 
 
 function drawWheelRotated(angle, flat) {
