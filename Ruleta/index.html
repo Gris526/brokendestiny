@@ -286,7 +286,8 @@ function spinWheel() {
   // 🌀 4. Calcular rotación hacia arriba (ángulo 0)
   const fullRotations = 5 * 2 * Math.PI;
   const targetAngle = 0; // arriba del canvas
-  const delta = targetAngle - winnerMid;
+  let delta = targetAngle - winnerMid;
+  if (delta < 0) delta += 2 * Math.PI;
   const from = currentRotation;
   const to = from + fullRotations + delta;
 
