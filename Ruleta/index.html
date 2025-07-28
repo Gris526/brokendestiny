@@ -293,7 +293,8 @@ function spinWheel() {
       const finalAngle = (currentRotation % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
 
       // 3. Buscar sector que contiene ángulo 0 (considerando rotación)
-      const angleAtTop = (2 * Math.PI - finalAngle) % (2 * Math.PI);
+      const angleAtTop = (3 * Math.PI / 2 - finalAngle + 2 * Math.PI) % (2 * Math.PI);
+
 
       const winner = sectors.find(
         s => angleAtTop >= s.start && angleAtTop < s.end
@@ -341,16 +342,17 @@ function drawWheelRotated(angle, flat) {
     ctx.restore();
     start += ang;
   }
-  ctx.restore();
+    ctx.restore();
 
-  // Flecha fuera del giro, apuntando hacia abajo
+  // Flecha fija arriba (apuntando hacia el centro)
   ctx.beginPath();
-  ctx.moveTo(200, 20);
-  ctx.lineTo(190, 0);
-  ctx.lineTo(210, 0);
+  ctx.moveTo(200, 0);     // punta de la flecha
+  ctx.lineTo(190, 20);    // base izquierda
+  ctx.lineTo(210, 20);    // base derecha
   ctx.closePath();
   ctx.fillStyle = arrowColor;
   ctx.fill();
+
 }
 
 function loadSound(type, file) {
