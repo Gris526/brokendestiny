@@ -346,9 +346,9 @@ function drawWheelRotated(angle, flat) {
 
   // Flecha fija arriba (apuntando hacia el centro)
   ctx.beginPath();
-  ctx.moveTo(200, 0);     // punta de la flecha
-  ctx.lineTo(190, 20);    // base izquierda
-  ctx.lineTo(210, 20);    // base derecha
+  ctx.moveTo(200, 20);     // punta de la flecha
+  ctx.lineTo(190, 0);    // base izquierda
+  ctx.lineTo(210, 0);    // base derecha
   ctx.closePath();
   ctx.fillStyle = arrowColor;
   ctx.fill();
