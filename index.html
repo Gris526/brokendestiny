@@ -3,22 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DnD Player Counter — Single File (Expanded)</title>
+  <title>Broken Destiny - Character</title>
   <style>
-    :root{--bg:#0b0b0f;--panel:#0f1014;--muted:#9aa0a6;--accent:#ff3b3b;--glass:rgba(255,255,255,0.03);--card-radius:14px;font-family:Inter, system-ui, -apple-system, Roboto, 'Segoe UI', 'Helvetica Neue', Arial}
+    :root{--bg:#0b0b0f;--panel:#0f1014;--muted:#9aa0a6;--accent:#ff3b3b;--glass:rgba(255,255,255,0.03);--card-radius:12px;font-family:Inter,system-ui,-apple-system,Roboto,'Segoe UI','Helvetica Neue',Arial}
     *{box-sizing:border-box}html,body{height:100%;margin:0;background:linear-gradient(180deg,#07070a 0%, #0b0b0f 60%);color:#e8e8ea}
-    .app{max-width:1200px;margin:20px auto;padding:18px;display:grid;grid-template-columns:360px 1fr;gap:18px}
-    .card{background:var(--panel);border-radius:var(--card-radius);padding:14px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
-    .avatar{height:200px;border-radius:12px;background:linear-gradient(180deg,#111 0%, #1a1a1f 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+    .app{max-width:1200px;margin:18px auto;padding:14px;display:grid;grid-template-columns:360px 1fr;gap:18px}
+    .card{background:var(--panel);border-radius:var(--card-radius);padding:12px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
+    .avatar{height:160px;border-radius:10px;background:linear-gradient(180deg,#111 0%, #1a1a1f 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
     .avatar img{width:100%;height:100%;object-fit:cover}
     .upload-btn{position:absolute;right:8px;bottom:8px;background:var(--glass);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--muted);cursor:pointer}
-    .player-name{font-size:20px;margin:12px 0 6px;display:flex;gap:8px;align-items:center}
+    .player-name{font-size:18px;margin:10px 0 6px;display:flex;gap:8px;align-items:center}
     .player-name input{flex:1;background:transparent;border:1px dashed rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:inherit}
     .hp-mana{display:flex;gap:8px;margin-top:8px}
-    .stat{flex:1;background:var(--glass);padding:10px;border-radius:10px;text-align:center}
+    .stat{flex:1;background:var(--glass);padding:10px;border-radius:8px;text-align:center}
     .stat .label{font-size:12px;color:var(--muted)}
-    .stat .value{font-size:20px;margin-top:6px}
-    .stat .btns{margin-top:8px;display:flex;gap:6px;justify-content:center}
+    .stat .value{font-size:18px;margin-top:6px}
     .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
     .btn.primary{border-color:var(--accent);color:var(--accent)}
     .quick-row{display:flex;gap:8px;margin-top:12px}
@@ -26,32 +25,42 @@
     .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
     .tab{padding:10px 12px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.02);color:var(--muted)}
     .tab.active{background:linear-gradient(90deg, rgba(255,59,59,0.12), rgba(255,59,59,0.06));color:var(--accent);border:1px solid rgba(255,59,59,0.12)}
-    .panel{background:var(--panel);padding:12px;border-radius:var(--card-radius);min-height:440px}
-    .list{display:block}
+    .panel{background:var(--panel);padding:12px;border-radius:var(--card-radius);min-height:460px}
     .list .item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px;background:rgba(0,0,0,0.25)}
     .small{font-size:13px;color:var(--muted)}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .control{flex:1;min-width:140px}
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .slot{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px}
-    .slot input, .panel input, .panel select{width:100%;margin-top:6px;padding:6px;border-radius:6px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:inherit}
+    .slot{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px}
+    input,select,textarea{width:100%;margin-top:6px;padding:6px;border-radius:6px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:inherit}
     .modal-back{position:fixed;inset:0;background:rgba(2,2,3,0.6);display:none;align-items:center;justify-content:center}
-    .modal{width:780px;background:#0e0f13;padding:14px;border-radius:12px}
+    .modal{width:820px;background:#0e0f13;padding:14px;border-radius:12px}
     .row{display:flex;gap:8px;align-items:center}
-    .muted{color:var(--muted)}
     footer{margin-top:10px;text-align:right;color:var(--muted);font-size:13px}
-    @media (max-width:980px){.app{grid-template-columns:1fr;padding:12px}.avatar{height:140px}}
+    .char-list{display:flex;gap:8px;flex-direction:column}
+    .char-item{display:flex;align-items:center;gap:8px}
+    .char-item button{flex:1}
+    .turn-controls{display:flex;gap:8px;margin-top:10px}
+    @media (max-width:980px){.app{grid-template-columns:1fr;padding:12px}.avatar{height:120px}}
   </style>
 </head>
 <body>
   <div class="app">
     <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <strong style="color:var(--accent)">Broken Destiny - Character</strong>
+        <div>
+          <button class="btn" id="addCharacter">New</button>
+          <button class="btn" id="deleteCharacter">Delete</button>
+        </div>
+      </div>
+
+      <div class="char-list" id="charList"></div>
+
+      <hr style="border:none;height:8px"> 
+
       <div class="avatar" id="avatarBox">
         <img id="avatarImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400'><rect width='100%' height='100%' fill='%23131317'/><text x='50%' y='50%' fill='%23999' font-size='26' text-anchor='middle' dominant-baseline='middle'>Upload image</text></svg>" alt="avatar">
-        <label class="upload-btn" title="Upload image">
-          <input id="avatarInput" type="file" accept="image/*" style="display:none">
-          📁 Upload
-        </label>
+        <label class="upload-btn" title="Upload image"><input id="avatarInput" type="file" accept="image/*" style="display:none">📁 Upload</label>
       </div>
 
       <div class="player-name">
@@ -62,21 +71,11 @@
       <div class="hp-mana">
         <div class="stat">
           <div class="label">HP</div>
-          <div class="value"><input id="hpCurrentInput" style="width:70px;text-align:center"/> / <input id="hpMaxInput" style="width:70px;text-align:center"/></div>
-          <div class="btns">
-            <button class="btn" data-act="hp-minus">-</button>
-            <button class="btn primary" data-act="hp-plus">+</button>
-            <button class="btn" data-act="hp-heal">Full</button>
-          </div>
+          <div class="value"><span id="hpCurrent">0</span> / <span id="hpMax">0</span></div>
         </div>
         <div class="stat">
-          <div class="label">MANA (Tier)</div>
-          <div class="value"><input id="manaCurrentInput" style="width:70px;text-align:center"/> / <input id="manaMaxInput" style="width:70px;text-align:center"/></div>
-          <div class="btns">
-            <button class="btn" data-act="mana-minus">-</button>
-            <button class="btn primary" data-act="mana-plus">+</button>
-            <button class="btn" data-act="mana-rest">Full</button>
-          </div>
+          <div class="label">MANA</div>
+          <div class="value"><span id="manaCurrent">0</span> / <span id="manaMax">0</span></div>
         </div>
       </div>
 
@@ -86,46 +85,14 @@
         <div class="quick-btn" id="openMods">Modifiers</div>
       </div>
 
-      <div style="margin-top:12px">
-        <div class="small muted">Armor Slots (up to 3)</div>
-        <div class="grid" style="margin-top:8px">
-          <div class="slot">
-            <div class="small muted">Armor 1</div>
-            <input data-slot="armor" data-index="0" placeholder="Name (e.g. Chainmail)" />
-            <input data-slot="armor-mod" data-index="0" placeholder="Modifier (+2 STR, +1 HP)" />
-          </div>
-          <div class="slot">
-            <div class="small muted">Armor 2</div>
-            <input data-slot="armor" data-index="1" placeholder="Name (optional)" />
-            <input data-slot="armor-mod" data-index="1" placeholder="Modifier" />
-          </div>
-          <div class="slot">
-            <div class="small muted">Armor 3</div>
-            <input data-slot="armor" data-index="2" placeholder="Name (optional)" />
-            <input data-slot="armor-mod" data-index="2" placeholder="Modifier" />
-          </div>
-        </div>
+      <div style="margin-top:10px" class="turn-controls">
+        <button class="btn" id="finishTurn">Finish Turn</button>
+        <button class="btn" id="exportChar">Export</button>
+        <button class="btn" id="importChar">Import</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
       </div>
 
-      <div style="margin-top:12px">
-        <div class="small muted">Weapons</div>
-        <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:8px">
-          <div class="slot">
-            <div class="small muted">Main Weapon</div>
-            <input data-slot="weapon" data-index="0" placeholder="Name (e.g. Longsword)" />
-            <input data-slot="weapon-mod" data-index="0" placeholder="Damage / Bonus" />
-          </div>
-          <div class="slot">
-            <div class="small muted">Side Weapon</div>
-            <input data-slot="weapon" data-index="1" placeholder="Name (e.g. Dagger)" />
-            <input data-slot="weapon-mod" data-index="1" placeholder="Damage / Bonus" />
-          </div>
-        </div>
-        <div style="margin-top:8px;font-size:13px;color:var(--muted)">You can add more weapon slots from the right panel.
-        </div>
-      </div>
-
-      <footer>Autosaves locally • Use the right-side panel to manage lists</footer>
+      <footer>Autosaves locally • Multiple characters supported</footer>
     </div>
 
     <div>
@@ -140,6 +107,7 @@
       </div>
 
       <div class="panel" id="panelRoot">
+        <!-- Inventory -->
         <div class="panel-page" data-page="inventory">
           <h3>Inventory</h3>
           <div class="controls">
@@ -151,17 +119,20 @@
           <div class="list" id="invList" style="margin-top:10px"></div>
         </div>
 
+        <!-- Spells -->
         <div class="panel-page" data-page="spells" style="display:none">
           <h3>Spells</h3>
           <div class="controls">
             <input id="spellName" placeholder="Spell name" />
-            <input id="spellCost" placeholder="Cost / Slot" />
+            <input id="spellCost" placeholder="Cost (mana)" style="width:120px" />
+            <input id="spellCooldown" placeholder="Cooldown (turns)" style="width:120px" />
             <button class="btn primary" id="addSpell">Add Spell</button>
           </div>
-          <div class="small muted" style="margin-top:6px">Spells track how many times they were used. Level is computed automatically from uses (formula included).</div>
+          <div class="small muted" style="margin-top:6px">Spells track uses and a cooldown mechanic. Use "Cast" to cast (respects mana & bravery reduction), and "Finish Turn" decrements cooldowns.</div>
           <div id="spellList" class="list" style="margin-top:10px"></div>
         </div>
 
+        <!-- Mods -->
         <div class="panel-page" data-page="mods" style="display:none">
           <h3>Modifiers & Titles</h3>
           <div class="controls">
@@ -170,10 +141,11 @@
             <input id="modGrantQty" placeholder="Qty" style="width:80px" />
             <button class="btn primary" id="addMod">Add</button>
           </div>
-          <div class="small muted" style="margin-top:6px">Modifiers can grant items, weapons, armors or give stat buffs. Titles are treated as modifiers that may give rewards.</div>
+          <div class="small muted" style="margin-top:6px">Modifiers can grant items immediately. You can later extend this to apply stat changes automatically.</div>
           <div id="modList" class="list" style="margin-top:10px"></div>
         </div>
 
+        <!-- Status -->
         <div class="panel-page" data-page="status" style="display:none">
           <h3>Status Effects</h3>
           <div class="controls">
@@ -184,6 +156,7 @@
           <div id="statusList" class="list" style="margin-top:10px"></div>
         </div>
 
+        <!-- Weapons -->
         <div class="panel-page" data-page="weapons" style="display:none">
           <h3>Weapons — Add/Manage Slots</h3>
           <div class="controls">
@@ -193,9 +166,10 @@
           <div id="weaponsContainer" style="margin-top:12px"></div>
         </div>
 
+        <!-- Stats -->
         <div class="panel-page" data-page="stats" style="display:none">
           <h3>Stats</h3>
-          <div class="small muted">Base stats run from 0 to 10. Modifiers can push them higher. Some stats have direct gameplay effects (see derived values below).</div>
+          <div class="small muted">Base stats run from 0 to 10 (but can exceed via modifiers). HP and Mana are derived here. Mana is directly tied to Mana Tier stat.</div>
           <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:10px">
             <div class="slot"><div class="small muted">Strength</div><input id="stat_str"/></div>
             <div class="slot"><div class="small muted">Speed</div><input id="stat_spd"/></div>
@@ -216,7 +190,7 @@
 
           <div style="margin-top:12px">
             <button class="btn" id="applyStats">Apply / Recalculate</button>
-            <button class="btn" id="toggleInversion">Toggle Cosmic: Inversion</button>
+            <button class="btn" id="toggleInversion">Toggle Inversion</button>
           </div>
 
           <div style="margin-top:12px" id="derivedValues" class="small muted"></div>
@@ -232,196 +206,141 @@
             <div><label class="small muted">Archetype</label><input id="archetype" placeholder="Archetype" /></div>
             <div><label class="small muted">Class</label><input id="class" placeholder="Class" /></div>
           </div>
-          <div style="margin-top:10px" class="small muted">Cosmic factors, weaknesses, and titles can be added in Modifiers panel and will affect derived results.</div>
         </div>
-
       </div>
     </div>
   </div>
 
-  <div class="modal-back" id="modalBack">
-    <div class="modal" role="dialog">
-      <h3 id="modalTitle">Modal</h3>
-      <div class="modal-body" id="modalBody"></div>
-      <div style="text-align:right;margin-top:8px"><button class="btn" id="closeModal">Close</button></div>
-    </div>
-  </div>
+  <div class="modal-back" id="modalBack"><div class="modal" role="dialog"><h3 id="modalTitle">Modal</h3><div class="modal-body" id="modalBody"></div><div style="text-align:right;margin-top:8px"><button class="btn" id="closeModal">Close</button></div></div></div>
 
   <script>
-    // State
-    const state = {
-      name:'', avatar:'', hpCurrent:10, hpMax:10, manaCurrent:5, manaMax:5,
+    // Multiple characters support
+    const STORAGE_KEY = 'broken_destiny_characters_v1';
+    let characters = [];
+    let currentIndex = 0;
+
+    function defaultCharacter(){ return {
+      id: Date.now().toString(36), name:'New Character', avatar:'', hpCurrent:10, hpMax:10, manaCurrent:5, manaMax:5,
       inventory:[], spells:[], mods:[], status:[], armors:['','',''], armorMods:['','',''], weapons:[{name:'',mod:''},{name:'',mod:''}], weaponSlots:2,
-      stats:{str:5,spd:5,int:5,res:0,chr:5,mas:5,per:5,wil:5,size:5,luck:5,ste:5,bra:5,manaTier:5,ins:0,aura:0},
+      stats:{str:5,spd:5,int:5,res:0,chr:5,mas:5,per:5,wil:5,size:5,luck:5,ste:5,bra:0,manaTier:5,ins:0,aura:0},
       cosmic:{inversion:false}
-    };
+    } }
 
-    // helpers
-    function computeSpellLevel(x){
-      // formula from user: n = min(max(floor((x*10/3.98)^(1/1.7)),1),100)
-      // ensure x is a number >=0
-      x = Number(x)||0;
-      const val = Math.pow((x*10/3.98), 1/1.7);
-      const n = Math.min(Math.max(Math.floor(val),1),100);
-      return n;
-    }
+    // load/save characters list
+    function loadAll(){ const raw = localStorage.getItem(STORAGE_KEY); if(!raw){ characters = [defaultCharacter()]; currentIndex = 0; saveAll(); return; } try{ characters = JSON.parse(raw); if(!characters || characters.length===0) characters = [defaultCharacter()]; if(currentIndex>=characters.length) currentIndex = 0; }catch(e){ characters = [defaultCharacter()]; } renderCharList(); loadCharacter(currentIndex); }
+    function saveAll(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(characters)); renderCharList(); }
 
-    function manaCapacityFromTier(t){
-      // mapping provided in user message
-      const map = {10:Infinity,9:25000,8:5000,7:2000,6:1250,5:750,4:500,3:200,2:100,1:0};
-      return map[t]===undefined?map[5]:map[t];
-    }
+    // UI refs
+    const charListEl = document.getElementById('charList');
+    const avatarInput = document.getElementById('avatarInput'); const avatarImg = document.getElementById('avatarImg');
+    const playerName = document.getElementById('playerName'); const hpCurrentEl = document.getElementById('hpCurrent'); const hpMaxEl = document.getElementById('hpMax');
+    const manaCurrentEl = document.getElementById('manaCurrent'); const manaMaxEl = document.getElementById('manaMax');
 
-    function willDamageMultiplier(will){
-      // user: "/2 on 10 and adds 0.001 per anything past that point"
-      will = Number(will)||0;
-      if(will >= 10) return 0.5 + 0.001*(will-10);
-      // assumption for <10: linear ramp from 1 at 0 down to 0.5 at 10
-      return 1 - (0.05 * will);
-    }
+    function renderCharList(){ charListEl.innerHTML=''; characters.forEach((c,i)=>{ const wrap=document.createElement('div'); wrap.className='char-item'; const b=document.createElement('button'); b.textContent=(i===currentIndex? '▶ ':'') + (c.name||'Unnamed'); b.className='btn'; b.addEventListener('click', ()=>{ saveCharacter(currentIndex); currentIndex = i; loadCharacter(i); }); const exportBtn = document.createElement('button'); exportBtn.className='btn'; exportBtn.textContent='⋯'; exportBtn.addEventListener('click', ()=>{ downloadJSON(c, (c.name||'character')+'.json'); }); wrap.appendChild(b); wrap.appendChild(exportBtn); charListEl.appendChild(wrap); }); }
 
-    function instinctDodgeChance(inst){ return 0.01 * (Number(inst)||0); }
-    function auraManaMultiplier(aura){ return 1 + (0.1 * (Number(aura)||0)); }
+    document.getElementById('addCharacter').addEventListener('click', ()=>{ saveCharacter(currentIndex); characters.push(defaultCharacter()); currentIndex = characters.length-1; saveAll(); loadCharacter(currentIndex); });
+    document.getElementById('deleteCharacter').addEventListener('click', ()=>{ if(confirm('Delete current character?')){ characters.splice(currentIndex,1); if(characters.length===0) characters.push(defaultCharacter()); currentIndex = Math.max(0,currentIndex-1); saveAll(); loadCharacter(currentIndex); } });
 
-    // DOM refs
-    const avatarInput = document.getElementById('avatarInput');
-    const avatarImg = document.getElementById('avatarImg');
-    const playerName = document.getElementById('playerName');
-    const hpCurrentInput = document.getElementById('hpCurrentInput');
-    const hpMaxInput = document.getElementById('hpMaxInput');
-    const manaCurrentInput = document.getElementById('manaCurrentInput');
-    const manaMaxInput = document.getElementById('manaMaxInput');
+    function loadCharacter(i){ const c = characters[i]; if(!c) return; // copy into working state
+      state = JSON.parse(JSON.stringify(c)); currentIndex = i; applyStateToUI(); renderCharList(); }
+    function saveCharacter(i){ if(!characters[i]) return; characters[i] = JSON.parse(JSON.stringify(state)); saveAll(); }
+
+    function downloadJSON(obj, filename){ const data = JSON.stringify(obj,null,2); const b = new Blob([data],{type:'application/json'}); const url = URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download = filename; a.click(); URL.revokeObjectURL(url); }
+
+    // import/export global
+    document.getElementById('exportChar').addEventListener('click', ()=>{ downloadJSON(state, (state.name||'character')+'.json'); });
+    document.getElementById('importChar').addEventListener('click', ()=>document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const obj=JSON.parse(r.result); characters.push(obj); saveAll(); currentIndex = characters.length-1; loadCharacter(currentIndex); alert('Imported character'); }catch(err){alert('Invalid JSON file')} }; r.readAsText(f); });
+
+    // working state (current character)
+    let state = defaultCharacter();
 
     // image upload
-    document.querySelector('.upload-btn').addEventListener('click', ()=> avatarInput.click());
-    avatarInput.addEventListener('change', async (e)=>{ const file = e.target.files[0]; if(!file) return; const data = await fileToDataUrl(file); state.avatar = data; avatarImg.src = data; save();});
+    document.querySelector('.upload-btn').addEventListener('click', ()=>avatarInput.click());
+    avatarInput.addEventListener('change', async (e)=>{ const file=e.target.files[0]; if(!file) return; const data = await fileToDataUrl(file); state.avatar = data; avatarImg.src = data; saveCharacter(currentIndex); saveAll(); });
 
-    playerName.addEventListener('input', e=>{ state.name = e.target.value; save(); });
+    playerName.addEventListener('input', ()=>{ state.name = playerName.value; renderCharList(); saveCharacter(currentIndex); saveAll(); });
 
-    // hp/mana input wiring
-    hpCurrentInput.addEventListener('input', ()=>{ state.hpCurrent = Number(hpCurrentInput.value)||0; save(); renderDerived(); });
-    hpMaxInput.addEventListener('input', ()=>{ state.hpMax = Number(hpMaxInput.value)||0; save(); renderDerived(); });
-    manaCurrentInput.addEventListener('input', ()=>{ state.manaCurrent = Number(manaCurrentInput.value)||0; save(); });
-    manaMaxInput.addEventListener('input', ()=>{ state.manaMax = Number(manaMaxInput.value)||0; save(); });
-
-    document.querySelectorAll('[data-act]').forEach(btn=>btn.addEventListener('click', ()=>{
-      const act = btn.dataset.act;
-      if(act.startsWith('hp')) handleHP(act);
-      if(act.startsWith('mana')) handleMana(act);
-    }));
-
-    function handleHP(act){ if(act==='hp-plus'){ state.hpCurrent = Math.min(state.hpMax, state.hpCurrent+1);} if(act==='hp-minus'){ state.hpCurrent = Math.max(0, state.hpCurrent-1);} if(act==='hp-heal'){ state.hpCurrent = state.hpMax;} save(); renderDerived(); }
-    function handleMana(act){ if(act==='mana-plus'){ state.manaCurrent = Math.min(state.manaMax, state.manaCurrent+1);} if(act==='mana-minus'){ state.manaCurrent = Math.max(0, state.manaCurrent-1);} if(act==='mana-rest'){ state.manaCurrent = state.manaMax;} save(); }
-
-    // Tabs
-    document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active'); showPage(t.dataset.tab);}));
-    document.getElementById('openInventory').addEventListener('click', ()=>document.querySelector('[data-tab="inventory"]').click());
-    document.getElementById('openSpells').addEventListener('click', ()=>document.querySelector('[data-tab="spells"]').click());
-    document.getElementById('openMods').addEventListener('click', ()=>document.querySelector('[data-tab="mods"]').click());
-    function showPage(name){ document.querySelectorAll('.panel-page').forEach(p=>p.style.display = (p.dataset.page===name)?'block':'none'); }
-
-    // Inventory (with qty)
-    const invList = document.getElementById('invList');
-    document.getElementById('addItem').addEventListener('click', ()=>{
-      const text = document.getElementById('invInput').value.trim(); const qty = Math.max(1, parseInt(document.getElementById('invQty').value) || 1);
-      if(!text) return; state.inventory.push({text,qty}); document.getElementById('invInput').value=''; document.getElementById('invQty').value=''; renderInventory(); save();
+    // Turn system: finish turn decrements cooldowns and status durations
+    document.getElementById('finishTurn').addEventListener('click', ()=>{ // cooldowns
+      state.spells.forEach(s=>{ if(s.cdRemaining && s.cdRemaining>0) s.cdRemaining = Math.max(0, s.cdRemaining-1); });
+      // status durations
+      state.status.forEach((st,idx)=>{ if(st.turns && st.turns>0){ st.turns = Number(st.turns)-1; if(st.turns<=0){ /* keep but mark? remove? we'll remove */ state.status.splice(idx,1); } } });
+      renderSpells(); renderStatuses(); saveCharacter(currentIndex); saveAll(); alert('Turn advanced: cooldowns and durations updated');
     });
-    function renderInventory(){ invList.innerHTML=''; state.inventory.forEach((it,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML = `<div><strong>${escapeHtml(it.text)}</strong><div class='small muted'>x ${it.qty}</div></div><div><button class='btn' data-i='${i}'>Edit</button> <button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-i]').addEventListener('click', ()=>{ const name = prompt('Edit name', it.text); if(name!==null) state.inventory[i].text = name; const q = prompt('Qty', it.qty); if(q!==null) state.inventory[i].qty = Math.max(0, parseInt(q)||0); renderInventory(); save(); }); el.querySelector('[data-r]').addEventListener('click', ()=>{ state.inventory.splice(i,1); renderInventory(); save();}); invList.appendChild(el); }); }
 
-    // Spells (track uses + computed level)
-    const spellList = document.getElementById('spellList');
-    document.getElementById('addSpell').addEventListener('click', ()=>{ const name = document.getElementById('spellName').value.trim(); const cost = document.getElementById('spellCost').value.trim(); if(!name) return; state.spells.push({name,cost,uses:0}); document.getElementById('spellName').value=''; document.getElementById('spellCost').value=''; renderSpells(); save(); });
-    function renderSpells(){ spellList.innerHTML=''; state.spells.forEach((s,i)=>{ const lvl = computeSpellLevel(s.uses); const el=document.createElement('div'); el.className='item'; el.innerHTML = `<div><strong>${escapeHtml(s.name)}</strong><div class='small muted'>Cost: ${escapeHtml(s.cost||'—')} • Uses: ${s.uses} • Level: ${lvl}</div></div><div><button class='btn' data-use='${i}'>Use</button> <button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-use]').addEventListener('click', ()=>{ state.spells[i].uses++; renderSpells(); save(); }); el.querySelector('[data-r]').addEventListener('click', ()=>{ state.spells.splice(i,1); renderSpells(); save(); }); spellList.appendChild(el); }); }
+    // Inventory with qty
+    const invList = document.getElementById('invList'); document.getElementById('addItem').addEventListener('click', ()=>{ const text=document.getElementById('invInput').value.trim(); const qty = Math.max(1, parseInt(document.getElementById('invQty').value)||1); if(!text) return; state.inventory.push({text,qty}); document.getElementById('invInput').value=''; document.getElementById('invQty').value=''; renderInventory(); saveCharacter(currentIndex); saveAll(); });
+    function renderInventory(){ invList.innerHTML=''; state.inventory.forEach((it,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div><strong>${escapeHtml(it.text)}</strong><div class='small muted'>x ${it.qty}</div></div><div><button class='btn' data-i='${i}'>Edit</button><button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-i]').addEventListener('click', ()=>{ const name=prompt('Edit name', it.text); if(name!==null) state.inventory[i].text = name; const q=prompt('Qty', it.qty); if(q!==null) state.inventory[i].qty = Math.max(0, parseInt(q)||0); renderInventory(); saveCharacter(currentIndex); saveAll(); }); el.querySelector('[data-r]').addEventListener('click', ()=>{ state.inventory.splice(i,1); renderInventory(); saveCharacter(currentIndex); saveAll(); }); invList.appendChild(el); }); }
 
-    // Modifiers & Titles
-    const modList = document.getElementById('modList');
-    document.getElementById('addMod').addEventListener('click', ()=>{
-      const name = document.getElementById('modName').value.trim(); const grantItem = document.getElementById('modGrantItem').value.trim(); const grantQty = parseInt(document.getElementById('modGrantQty').value) || 0; if(!name) return;
-      const mod = {name,grantItem,grantQty}; state.mods.push(mod);
-      // immediately grant item if specified
-      if(grantItem && grantQty>0){ state.inventory.push({text:grantItem,qty:grantQty}); }
-      document.getElementById('modName').value=''; document.getElementById('modGrantItem').value=''; document.getElementById('modGrantQty').value=''; renderMods(); renderInventory(); save();
-    });
-    function renderMods(){ modList.innerHTML=''; state.mods.forEach((m,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML = `<div>${escapeHtml(m.name)} ${m.grantItem?'<div class="small muted">Grants: '+escapeHtml(m.grantItem)+' x'+m.grantQty+'</div>':''}</div><div><button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-r]').addEventListener('click', ()=>{ state.mods.splice(i,1); renderMods(); save(); }); modList.appendChild(el); }); }
+    // Spells with uses, cooldown and cast button
+    const spellList = document.getElementById('spellList'); document.getElementById('addSpell').addEventListener('click', ()=>{ const name=document.getElementById('spellName').value.trim(); const cost = Number(document.getElementById('spellCost').value) || 0; const cd = Math.max(0, parseInt(document.getElementById('spellCooldown').value)||0); if(!name) return; state.spells.push({name,cost,uses:0,cooldown:cd,cdRemaining:0}); document.getElementById('spellName').value=''; document.getElementById('spellCost').value=''; document.getElementById('spellCooldown').value=''; renderSpells(); saveCharacter(currentIndex); saveAll(); });
+
+    function computeSpellLevel(x){ x = Number(x)||0; const val = Math.pow((x*10/3.98), 1/1.7); const n = Math.min(Math.max(Math.floor(val),1),100); return n; }
+
+    function renderSpells(){ spellList.innerHTML=''; state.spells.forEach((s,i)=>{ const lvl=computeSpellLevel(s.uses); const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div><strong>${escapeHtml(s.name)}</strong><div class='small muted'>Cost: ${s.cost} • Uses: ${s.uses} • Level: ${lvl} • CD: ${s.cdRemaining||0}/${s.cooldown}</div></div><div><button class='btn' data-cast='${i}'>Cast</button> <button class='btn' data-use='${i}'>Use(no cost)</button> <button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-cast]').addEventListener('click', ()=>castSpell(i)); el.querySelector('[data-use]').addEventListener('click', ()=>{ state.spells[i].uses++; renderSpells(); saveCharacter(currentIndex); saveAll(); }); el.querySelector('[data-r]').addEventListener('click', ()=>{ state.spells.splice(i,1); renderSpells(); saveCharacter(currentIndex); saveAll(); }); spellList.appendChild(el); }); }
+
+    // Spell casting: respects mana, bravery reduction, and applies cooldown
+    function castSpell(i){ const s = state.spells[i]; if(!s) return; if(s.cdRemaining && s.cdRemaining>0){ alert('Spell is on cooldown for '+s.cdRemaining+' more turns'); return; } const bravery = Number(state.stats.bra)||0; const braveryReduction = bravery * 0.00001; const manaCost = Math.ceil(s.cost * (1 - braveryReduction)); if(state.manaCurrent < manaCost){ alert('Not enough mana ('+state.manaCurrent+' / need '+manaCost+')'); return; } state.manaCurrent -= manaCost; s.uses = (s.uses||0) + 1; s.cdRemaining = s.cooldown || 0; renderSpells(); renderDerived(); saveCharacter(currentIndex); saveAll(); }
+
+    // Modifiers
+    const modList = document.getElementById('modList'); document.getElementById('addMod').addEventListener('click', ()=>{ const name=document.getElementById('modName').value.trim(); const grantItem=document.getElementById('modGrantItem').value.trim(); const grantQty=parseInt(document.getElementById('modGrantQty').value)||0; if(!name) return; const m={name,grantItem,grantQty}; state.mods.push(m); if(grantItem && grantQty>0) state.inventory.push({text:grantItem,qty:grantQty}); document.getElementById('modName').value=''; document.getElementById('modGrantItem').value=''; document.getElementById('modGrantQty').value=''; renderMods(); renderInventory(); saveCharacter(currentIndex); saveAll(); });
+    function renderMods(){ modList.innerHTML=''; state.mods.forEach((m,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div>${escapeHtml(m.name)} ${m.grantItem?'<div class="small muted">Grants: '+escapeHtml(m.grantItem)+' x'+m.grantQty+'</div>':''}</div><div><button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-r]').addEventListener('click', ()=>{ state.mods.splice(i,1); renderMods(); saveCharacter(currentIndex); saveAll(); }); modList.appendChild(el); }); }
 
     // Status
-    const statusList = document.getElementById('statusList');
-    document.getElementById('addStatus').addEventListener('click', ()=>{ const name=document.getElementById('statusName').value.trim(); const turns=document.getElementById('statusTurns').value.trim(); if(!name) return; state.status.push({name,turns}); document.getElementById('statusName').value=''; document.getElementById('statusTurns').value=''; renderStatuses(); save(); });
-    function renderStatuses(){ statusList.innerHTML=''; state.status.forEach((s,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML = `<div>${escapeHtml(s.name)} <div class='small muted'>${s.turns?('Turns: '+s.turns):''}</div></div><div><button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-r]').addEventListener('click', ()=>{ state.status.splice(i,1); renderStatuses(); save(); }); statusList.appendChild(el); }); }
+    const statusList = document.getElementById('statusList'); document.getElementById('addStatus').addEventListener('click', ()=>{ const name=document.getElementById('statusName').value.trim(); const turns = parseInt(document.getElementById('statusTurns').value)||0; if(!name) return; state.status.push({name,turns}); document.getElementById('statusName').value=''; document.getElementById('statusTurns').value=''; renderStatuses(); saveCharacter(currentIndex); saveAll(); });
+    function renderStatuses(){ statusList.innerHTML=''; state.status.forEach((s,i)=>{ const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div>${escapeHtml(s.name)} <div class='small muted'>${s.turns?('Turns: '+s.turns):''}</div></div><div><button class='btn' data-r='${i}'>Remove</button></div>`; el.querySelector('[data-r]').addEventListener('click', ()=>{ state.status.splice(i,1); renderStatuses(); saveCharacter(currentIndex); saveAll(); }); statusList.appendChild(el); }); }
 
-    // Weapons slots
-    const weaponsContainer = document.getElementById('weaponsContainer');
-    document.getElementById('addWeaponSlot').addEventListener('click', ()=>{ state.weapons.push({name:'',mod:''}); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); save(); });
-    document.getElementById('removeWeaponSlot').addEventListener('click', ()=>{ if(state.weapons.length>1){ state.weapons.pop(); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); save(); } });
-    function renderWeaponsSlots(){ weaponsContainer.innerHTML=''; state.weapons.forEach((w,i)=>{ const wrap=document.createElement('div'); wrap.className='slot'; wrap.style.marginBottom='8px'; wrap.innerHTML=`<div class='small muted'>Slot ${i+1}</div><input data-wi='${i}' placeholder='Name' value='${escapeHtml(w.name)}' /><input data-wm='${i}' placeholder='Damage / Bonus' value='${escapeHtml(w.mod)}' />`; wrap.querySelector(`[data-wi='${i}']`).addEventListener('input', e=>{ state.weapons[i].name = e.target.value; save(); }); wrap.querySelector(`[data-wm='${i}']`).addEventListener('input', e=>{ state.weapons[i].mod = e.target.value; save(); }); weaponsContainer.appendChild(wrap); }); }
+    // Weapons
+    const weaponsContainer = document.getElementById('weaponsContainer'); document.getElementById('addWeaponSlot').addEventListener('click', ()=>{ state.weapons.push({name:'',mod:''}); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); saveCharacter(currentIndex); saveAll(); }); document.getElementById('removeWeaponSlot').addEventListener('click', ()=>{ if(state.weapons.length>1){ state.weapons.pop(); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); saveCharacter(currentIndex); saveAll(); } }); function renderWeaponsSlots(){ weaponsContainer.innerHTML=''; state.weapons.forEach((w,i)=>{ const wrap=document.createElement('div'); wrap.className='slot'; wrap.style.marginBottom='8px'; wrap.innerHTML=`<div class='small muted'>Slot ${i+1}</div><input data-wi='${i}' placeholder='Name' value='${escapeHtml(w.name)}' /><input data-wm='${i}' placeholder='Damage / Bonus' value='${escapeHtml(w.mod)}' />`; wrap.querySelector(`[data-wi='${i}']`).addEventListener('input', e=>{ state.weapons[i].name = e.target.value; saveCharacter(currentIndex); saveAll(); }); wrap.querySelector(`[data-wm='${i}']`).addEventListener('input', e=>{ state.weapons[i].mod = e.target.value; saveCharacter(currentIndex); saveAll(); }); weaponsContainer.appendChild(wrap); }); }
 
-    // armor inputs
-    document.querySelectorAll('[data-slot="armor"]').forEach(inp=>inp.addEventListener('input', e=>{ const i=+e.target.dataset.index; state.armors[i]=e.target.value; save(); }));
-    document.querySelectorAll('[data-slot="armor-mod"]').forEach(inp=>inp.addEventListener('input', e=>{ const i=+e.target.dataset.index; state.armorMods[i]=e.target.value; save(); }));
-
-    // weapon default wiring
-    document.querySelectorAll('[data-slot="weapon"]').forEach(inp=>inp.addEventListener('input', e=>{ const i=+e.target.dataset.index; ensureWeaponIndex(i); state.weapons[i].name=e.target.value; save(); }));
-    document.querySelectorAll('[data-slot="weapon-mod"]').forEach(inp=>inp.addEventListener('input', e=>{ const i=+e.target.dataset.index; ensureWeaponIndex(i); state.weapons[i].mod=e.target.value; save(); }));
-    function ensureWeaponIndex(i){ while(state.weapons.length<=i) state.weapons.push({name:'',mod:''}); }
-
-    // Stats UI wiring
+    // Stats logic
     const statIds = ['str','spd','int','res','chr','mas','per','wil','size','luck','ste','bra','manaTier','ins','aura'];
-    statIds.forEach(id=>{ const el = document.getElementById('stat_'+id); if(el){ el.value = state.stats[id]; el.addEventListener('input', ()=>{ state.stats[id] = Number(el.value)||0; }); } });
-    document.getElementById('applyStats').addEventListener('click', ()=>{ applyStats(); save(); renderDerived(); });
-    document.getElementById('toggleInversion').addEventListener('click', ()=>{ state.cosmic.inversion = !state.cosmic.inversion; applyStats(); save(); renderDerived(); alert('Inversion '+(state.cosmic.inversion?'ENABLED':'DISABLED')); });
+    statIds.forEach(id=>{ const el=document.getElementById('stat_'+id); if(el){ el.value = state.stats[id]; el.addEventListener('input', ()=>{ state.stats[id] = Number(el.value)||0; }); } });
 
-    function applyStats(){ // apply inversion if set
-      if(state.cosmic.inversion){ Object.keys(state.stats).forEach(k=>{ // invert on 0-10 scale to 1-10 mapping: new = 11 - old
-          state.stats[k] = 11 - (Number(state.stats[k])||0);
-        });
-      }
-      // recalc HP max based on resistance: user said each point of Resistance = 1 HP base
-      state.hpMax = (Number(state.hpMax)||10) + (Number(state.stats.res)||0);
-      // apply aura multiplier to manaMax
+    function resistanceHpBonus(res){ res = Number(res)||0; if(res<=10) return res * 100; return 10*100 + (res-10)*10; }
+    function willDamageMultiplier(will){ will = Number(will)||0; if(will >= 10) return 0.5 + 0.001*(will-10); return 1 - (0.05 * will); }
+    function instinctDodgeChance(inst){ return 0.01 * (Number(inst)||0); }
+    function auraManaMultiplier(aura){ return 1 + (0.1 * (Number(aura)||0)); }
+    function manaCapacityFromTier(t){ const map = {10:Infinity,9:25000,8:5000,7:2000,6:1250,5:750,4:500,3:200,2:100,1:0}; return map[t]===undefined?map[5]:map[t]; }
+
+    document.getElementById('applyStats').addEventListener('click', ()=>{ applyStats(); saveCharacter(currentIndex); saveAll(); renderDerived(); });
+    document.getElementById('toggleInversion').addEventListener('click', ()=>{ state.cosmic.inversion = !state.cosmic.inversion; applyStats(); saveCharacter(currentIndex); saveAll(); renderDerived(); alert('Inversion '+(state.cosmic.inversion?'ENABLED':'DISABLED')); });
+
+    function applyStats(){ // inversion
+      if(state.cosmic.inversion){ Object.keys(state.stats).forEach(k=>{ state.stats[k] = 11 - (Number(state.stats[k])||0); }); }
+      // HP max: base hpMax tracked but add resistance bonus
+      const baseHp = state.hpMax || 10; const resBonus = resistanceHpBonus(state.stats.res); state.hpMax = baseHp + resBonus;
+      // Mana max: based on mana tier and aura
+      const manaBase = manaCapacityFromTier(state.stats.manaTier);
       const auraMult = auraManaMultiplier(state.stats.aura);
-      state.manaMax = Math.round(manaCapacityFromTier(state.stats.manaTier) * auraMult);
-      // will and instinct derived effects will be shown below
-      // make sure current hp/mana are not above max
-      state.hpCurrent = Math.min(state.hpCurrent, state.hpMax);
-      state.manaCurrent = Math.min(state.manaCurrent, state.manaMax);
-      // push updated values to inputs
-      hpMaxInput.value = state.hpMax; hpCurrentInput.value = state.hpCurrent; manaMaxInput.value = state.manaMax; manaCurrentInput.value = state.manaCurrent;
-      renderWeaponsSlots(); renderInventory(); renderSpells(); renderMods(); renderStatuses();
+      state.manaMax = (manaBase===Infinity ? Infinity : Math.round(manaBase * auraMult));
+      // clamp current values
+      if(state.hpCurrent > state.hpMax) state.hpCurrent = state.hpMax;
+      if(state.manaMax !== Infinity && state.manaCurrent > state.manaMax) state.manaCurrent = state.manaMax;
+      // update UI
+      hpMaxEl.textContent = state.hpMax;
+      hpCurrentEl.textContent = state.hpCurrent;
+      manaMaxEl.textContent = state.manaMax===Infinity? '∞' : state.manaMax;
+      manaCurrentEl.textContent = state.manaCurrent;
+      // update stat inputs
+      statIds.forEach(id=>{ const el=document.getElementById('stat_'+id); if(el) el.value = state.stats[id]; });
     }
 
-    function renderDerived(){ const will = state.stats.wil||0; const inst = state.stats.ins||0; const aura = state.stats.aura||0; const manaTier = state.stats.manaTier||5; const derived = [];
-      derived.push('HP Max (with Resistance) = ' + state.hpMax);
-      derived.push('Will damage multiplier = x' + willDamageMultiplier(will).toFixed(4) + ' (at Will = '+will+')');
-      derived.push('Instinct dodge chance = ' + (instinctDodgeChance(inst)*100).toFixed(2) + '%');
-      const manaCap = manaCapacityFromTier(manaTier);
-      derived.push('Mana base capacity (tier '+manaTier+') = ' + (manaCap===Infinity? '∞ (infinite)' : manaCap) + ' • Aura multiplier x' + auraManaMultiplier(aura).toFixed(3));
-      derived.push('Aura total mana cap = ' + (manaCap===Infinity? '∞' : Math.round(manaCap * auraManaMultiplier(aura))));
-      derived.push('Luck = ' + (state.stats.luck||0) + ' (may affect chances; e.g. 1-in-20 -> improved at high Luck)');
-      derived.push('Bravery reduces mana usage (applied in house rules).');
-      document.getElementById('derivedValues').innerText = derived.join('
-');
-    }
+    function renderDerived(){ const will = state.stats.wil||0; const inst = state.stats.ins||0; const aura=state.stats.aura||0; const manaTier = state.stats.manaTier||5; const derived=[]; derived.push('HP Max (with Resistance) = '+state.hpMax); derived.push('Will damage multiplier = x'+willDamageMultiplier(will).toFixed(4)+' (Will='+will+')'); derived.push('Instinct dodge chance = '+(instinctDodgeChance(inst)*100).toFixed(2)+'%'); const manaCap = manaCapacityFromTier(manaTier); derived.push('Mana base capacity (tier '+manaTier+') = '+(manaCap===Infinity?'∞':manaCap)+' • Aura multiplier x'+auraManaMultiplier(aura).toFixed(3)); derived.push('Aura total mana cap = '+(manaCap===Infinity?'∞':Math.round(manaCap * auraManaMultiplier(aura)))); derived.push('Bravery reduces mana usage by 0.001% per level (applied when casting).'); document.getElementById('derivedValues').innerText = derived.join('
+'); }
 
-    // Save/Load localStorage
-    const DEFAULT_KEY = 'dnd_player_default_expanded_v2';
-    function save(key=DEFAULT_KEY){ localStorage.setItem(key, JSON.stringify(state)); }
-    function load(key=DEFAULT_KEY){ const raw = localStorage.getItem(key); if(!raw) return; try{ const obj = JSON.parse(raw); Object.assign(state,obj); // ensure nested objects exist
-        state.stats = Object.assign(state.stats || {}, obj.stats || {});
-        applyStateToUI(); }catch(e){ console.warn('load fail',e); } }
-    function applyStateToUI(){ if(state.avatar) avatarImg.src = state.avatar; playerName.value = state.name||''; hpCurrentInput.value = state.hpCurrent; hpMaxInput.value = state.hpMax; manaCurrentInput.value = state.manaCurrent; manaMaxInput.value = state.manaMax; // stats
-      statIds.forEach(id=>{ const el=document.getElementById('stat_'+id); if(el) el.value = state.stats[id]||0; }); renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots(); renderDerived(); }
-
-    // misc helpers
+    // helpers
     function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file);});}
     function escapeHtml(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-    // init
-    renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots(); load(DEFAULT_KEY); if(!localStorage.getItem(DEFAULT_KEY)) save();
+    function applyStateToUI(){ if(state.avatar) avatarImg.src = state.avatar; playerName.value = state.name||''; hpCurrentEl.textContent = state.hpCurrent; hpMaxEl.textContent = state.hpMax; manaCurrentEl.textContent = state.manaCurrent; manaMaxEl.textContent = state.manaMax===Infinity?'∞':state.manaMax; renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots(); renderDerived(); }
+
+    // initial load
+    loadAll(); applyStateToUI();
 
     // modal
-    const modalBack = document.getElementById('modalBack'); const modalTitle = document.getElementById('modalTitle'); const modalBody = document.getElementById('modalBody'); document.getElementById('closeModal').addEventListener('click', ()=>modalBack.style.display='none');
-
-    // export/import simplified (kept from original file) -- omitted here for brevity but can be re-added on demand
+    document.getElementById('closeModal').addEventListener('click', ()=>document.getElementById('modalBack').style.display='none');
   </script>
 </body>
 </html>
