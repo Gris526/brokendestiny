@@ -1,660 +1,366 @@
-<!-- Broken Destiny - Character (PART 1/2) -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
   <title>Broken Destiny - Character</title>
   <style>
-    :root{
-      --bg:#0b0b0f; --panel:#0f1014; --muted:#9aa0a6; --accent:#ff3b3b; --glass:rgba(255,255,255,0.03);
-      --card-radius:12px; font-family:Inter,system-ui,-apple-system,Roboto,'Segoe UI','Helvetica Neue',Arial;
+    body {
+      background: #111;
+      color: #eee;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,#07070a 0%, #0b0b0f 60%);color:#e8e8ea}
-    .app{max-width:1200px;margin:18px auto;padding:14px;display:grid;grid-template-columns:360px 1fr;gap:18px}
-    .card{background:var(--panel);border-radius:var(--card-radius);padding:12px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
-    .avatar{height:160px;border-radius:10px;background:linear-gradient(180deg,#111 0%, #1a1a1f 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-    .avatar img{width:100%;height:100%;object-fit:cover}
-    .upload-btn{position:absolute;right:8px;bottom:8px;background:var(--glass);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--muted);cursor:pointer}
-    .player-name{font-size:18px;margin:10px 0 6px;display:flex;gap:8px;align-items:center}
-    .player-name input{flex:1;background:transparent;border:1px dashed rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:inherit}
-    .hp-mana{display:flex;gap:8px;margin-top:8px}
-    .stat{flex:1;background:var(--glass);padding:10px;border-radius:8px;text-align:center}
-    .stat .label{font-size:12px;color:var(--muted)}
-    .stat .value{font-size:18px;margin-top:6px}
-    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
-    .btn.primary{border-color:var(--accent);color:var(--accent)}
-    .quick-row{display:flex;gap:8px;margin-top:12px}
-    .quick-btn{flex:1;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
-    .tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-    .tab{padding:10px 12px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.02);color:var(--muted)}
-    .tab.active{background:linear-gradient(90deg, rgba(255,59,59,0.12), rgba(255,59,59,0.06));color:var(--accent);border:1px solid rgba(255,59,59,0.12)}
-    .panel{background:var(--panel);padding:12px;border-radius:var(--card-radius);min-height:460px}
-    .list .item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px;background:rgba(0,0,0,0.25)}
-    .small{font-size:13px;color:var(--muted)}
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-    .slot{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px}
-    input,select,textarea{width:100%;margin-top:6px;padding:6px;border-radius:6px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:inherit}
-    .modal-back{position:fixed;inset:0;background:rgba(2,2,3,0.6);display:none;align-items:center;justify-content:center}
-    .modal{width:820px;background:#0e0f13;padding:14px;border-radius:12px}
-    .row{display:flex;gap:8px;align-items:center}
-    footer{margin-top:10px;text-align:right;color:var(--muted);font-size:13px}
-    .char-list{display:flex;gap:8px;flex-direction:column}
-    .char-item{display:flex;align-items:center;gap:8px}
-    .char-item button{flex:1}
-    .turn-controls{display:flex;gap:8px;margin-top:10px}
-    .muted{color:var(--muted)}
-    @media (max-width:980px){.app{grid-template-columns:1fr;padding:12px}.avatar{height:120px}}
+    header {
+      padding: 1rem;
+      background: #222;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+    .sidebar {
+      width: 250px;
+      background: #1a1a1a;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    .main {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+    img#charImage {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    input, button, select, textarea {
+      margin: 4px 0;
+      padding: 5px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      background: #333;
+      color: #eee;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      background: #222;
+      border: 1px solid #333;
+    }
+    .tab.active {
+      background: #444;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin: 5px 0;
+      padding: 5px;
+      background: #222;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
-  <div class="app">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <strong style="color:var(--accent)">Broken Destiny - Character</strong>
-        <div>
-          <button class="btn" id="addCharacter">New</button>
-          <button class="btn" id="deleteCharacter">Delete</button>
-        </div>
-      </div>
+  <header>Broken Destiny - Character</header>
+  <div class="container">
+    <div class="sidebar">
+      <input type="file" id="uploadImage" accept="image/*">
+      <img id="charImage" src="" alt="Character Image">
+      <input type="text" id="charName" placeholder="Character Name">
 
-      <div class="char-list" id="charList"></div>
-
-      <hr style="border:none;height:8px">
-
-      <div class="avatar" id="avatarBox">
-        <img id="avatarImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400'><rect width='100%' height='100%' fill='%23131317'/><text x='50%' y='50%' fill='%23999' font-size='26' text-anchor='middle' dominant-baseline='middle'>Upload image</text></svg>" alt="avatar">
-        <label class="upload-btn" title="Upload image"><input id="avatarInput" type="file" accept="image/*" style="display:none">📁 Upload</label>
-      </div>
-
-      <div class="player-name">
-        <strong style="color:var(--accent)">Name</strong>
-        <input id="playerName" placeholder="Character name" />
-      </div>
-
-      <div class="hp-mana">
-        <div class="stat">
-          <div class="label">HP</div>
-          <div class="value"><span id="hpCurrent">0</span> / <span id="hpMax">0</span></div>
-        </div>
-        <div class="stat">
-          <div class="label">MANA</div>
-          <div class="value"><span id="manaCurrent">0</span> / <span id="manaMax">0</span></div>
-        </div>
-      </div>
-
-      <div class="quick-row">
-        <div class="quick-btn" id="openInventory">Inventory</div>
-        <div class="quick-btn" id="openSpells">Spells</div>
-        <div class="quick-btn" id="openMods">Modifiers</div>
-      </div>
-
-      <div style="margin-top:10px" class="turn-controls">
-        <button class="btn" id="finishTurn">Finish Turn</button>
-        <button class="btn" id="exportChar">Export</button>
-        <button class="btn" id="importChar">Import</button>
-        <input type="file" id="importFile" accept="application/json" style="display:none">
-      </div>
-
-      <footer>Autosaves locally • Multiple characters supported</footer>
+      <h3>Stats</h3>
+      <div id="stats"></div>
     </div>
 
-    <div>
-      <div class="tabs" role="tablist">
+    <div class="main">
+      <div class="tabs">
         <div class="tab active" data-tab="inventory">Inventory</div>
         <div class="tab" data-tab="spells">Spells</div>
-        <div class="tab" data-tab="mods">Modifiers</div>
-        <div class="tab" data-tab="status">Status Effects</div>
+        <div class="tab" data-tab="modifiers">Modifiers</div>
+        <div class="tab" data-tab="status">Status</div>
         <div class="tab" data-tab="weapons">Weapons</div>
-        <div class="tab" data-tab="stats">Stats</div>
-        <div class="tab" data-tab="options">Other</div>
+        <div class="tab" data-tab="armor">Armor</div>
+        <div class="tab" data-tab="meta">Meta</div>
       </div>
 
-      <div class="panel" id="panelRoot">
-        <!-- Inventory -->
-        <div class="panel-page" data-page="inventory">
-          <h3>Inventory</h3>
-          <div class="controls">
-            <input id="invInput" placeholder="Add item (e.g. Rope)" />
-            <input id="invQty" placeholder="Qty" style="width:80px" />
-            <button class="btn primary" id="addItem">Add</button>
-          </div>
-          <div class="small muted" style="margin-top:6px">Items can have a quantity. Click an item to edit quantity or name.</div>
-          <div class="list" id="invList" style="margin-top:10px"></div>
-        </div>
+      <div id="inventory" class="tab-content active">
+        <button id="addItem">Add Item</button>
+        <ul id="inventoryList"></ul>
+      </div>
 
-        <!-- Spells -->
-        <div class="panel-page" data-page="spells" style="display:none">
-          <h3>Spells</h3>
-          <div class="controls">
-            <input id="spellName" placeholder="Spell name" />
-            <input id="spellCost" placeholder="Cost (mana)" style="width:120px" />
-            <input id="spellCooldown" placeholder="Cooldown (turns)" style="width:120px" />
-            <button class="btn primary" id="addSpell">Add Spell</button>
-          </div>
-          <div class="small muted" style="margin-top:6px">Spells track uses and a cooldown mechanic. Use "Cast" to cast (respects mana & bravery reduction), and "Finish Turn" decrements cooldowns.</div>
-          <div id="spellList" class="list" style="margin-top:10px"></div>
-        </div>
+      <div id="spells" class="tab-content">
+        <button id="addSpell">Add Spell</button>
+        <ul id="spellList"></ul>
+      </div>
 
-        <!-- Mods -->
-        <div class="panel-page" data-page="mods" style="display:none">
-          <h3>Modifiers & Titles</h3>
-          <div class="controls">
-            <input id="modName" placeholder="Modifier name (e.g. Raze: +2 STR)" />
-            <input id="modGrantItem" placeholder="Grants item (name) - optional" />
-            <input id="modGrantQty" placeholder="Qty" style="width:80px" />
-            <button class="btn primary" id="addMod">Add</button>
-          </div>
-          <div class="small muted" style="margin-top:6px">Modifiers can grant items immediately. You can later extend this to apply stat changes automatically.</div>
-          <div id="modList" class="list" style="margin-top:10px"></div>
-        </div>
+      <div id="modifiers" class="tab-content">
+        <button id="addModifier">Add Modifier</button>
+        <ul id="modifierList"></ul>
+      </div>
 
-        <!-- Status -->
-        <div class="panel-page" data-page="status" style="display:none">
-          <h3>Status Effects</h3>
-          <div class="controls">
-            <input id="statusName" placeholder="Status (e.g. Poisoned)" />
-            <input id="statusTurns" placeholder="Turns / Duration (optional)" />
-            <button class="btn primary" id="addStatus">Add</button>
-          </div>
-          <div id="statusList" class="list" style="margin-top:10px"></div>
-        </div>
-<!-- Broken Destiny - Character (PART 2/2) -->
-        <!-- Weapons -->
-        <div class="panel-page" data-page="weapons" style="display:none">
-          <h3>Weapons — Add/Manage Slots</h3>
-          <div class="controls">
-            <button class="btn" id="addWeaponSlot">Add Weapon Slot</button>
-            <button class="btn" id="removeWeaponSlot">Remove Last Slot</button>
-          </div>
-          <div id="weaponsContainer" style="margin-top:12px"></div>
-        </div>
+      <div id="status" class="tab-content">
+        <button id="addStatus">Add Status</button>
+        <ul id="statusList"></ul>
+      </div>
 
-        <!-- Stats -->
-        <div class="panel-page" data-page="stats" style="display:none">
-          <h3>Stats</h3>
-          <div class="small muted">Base stats run from 0 to 10 (but can exceed via modifiers). HP and Mana are derived here. Mana is tied to Mana Tier stat.</div>
-          <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:10px">
-            <div class="slot"><div class="small muted">Strength</div><input id="stat_str"/></div>
-            <div class="slot"><div class="small muted">Speed</div><input id="stat_spd"/></div>
-            <div class="slot"><div class="small muted">Intelligence</div><input id="stat_int"/></div>
-            <div class="slot"><div class="small muted">Resistance</div><input id="stat_res"/></div>
-            <div class="slot"><div class="small muted">Charm</div><input id="stat_chr"/></div>
-            <div class="slot"><div class="small muted">Mastery</div><input id="stat_mas"/></div>
-            <div class="slot"><div class="small muted">Perception</div><input id="stat_per"/></div>
-            <div class="slot"><div class="small muted">Will</div><input id="stat_wil"/></div>
-            <div class="slot"><div class="small muted">Size</div><input id="stat_size"/></div>
-            <div class="slot"><div class="small muted">Luck</div><input id="stat_luck"/></div>
-            <div class="slot"><div class="small muted">Stealth</div><input id="stat_ste"/></div>
-            <div class="slot"><div class="small muted">Bravery</div><input id="stat_bra"/></div>
-            <div class="slot"><div class="small muted">Mana Tier (1-10)</div><input id="stat_manaTier"/></div>
-            <div class="slot"><div class="small muted">Instinct</div><input id="stat_ins"/></div>
-            <div class="slot"><div class="small muted">Aura</div><input id="stat_aura"/></div>
-          </div>
+      <div id="weapons" class="tab-content">
+        <button id="addWeapon">Add Weapon</button>
+        <ul id="weaponList"></ul>
+      </div>
 
-          <div style="margin-top:12px">
-            <button class="btn" id="applyStats">Apply / Recalculate</button>
-            <button class="btn" id="toggleInversion">Toggle Inversion</button>
-          </div>
+      <div id="armor" class="tab-content">
+        <button id="addArmor">Add Armor</button>
+        <ul id="armorList"></ul>
+      </div>
 
-          <div style="margin-top:12px" id="derivedValues" class="small muted" aria-live="polite"></div>
-        </div>
-
-        <div class="panel-page" data-page="options" style="display:none">
-          <h3>Other</h3>
-          <div class="row" style="margin-top:8px">
-            <div><label class="small muted">Race</label><input id="race" placeholder="Race" /></div>
-            <div><label class="small muted">Subrace</label><input id="subrace" placeholder="Subrace" /></div>
-          </div>
-          <div class="row" style="margin-top:8px">
-            <div><label class="small muted">Archetype</label><input id="archetype" placeholder="Archetype" /></div>
-            <div><label class="small muted">Class</label><input id="class" placeholder="Class" /></div>
-          </div>
-        </div>
+      <div id="meta" class="tab-content">
+        <button id="saveData">Export JSON</button>
+        <button id="loadData">Import JSON</button>
+        <textarea id="dataIO" rows="10" placeholder="Paste JSON here"></textarea>
       </div>
     </div>
   </div>
-
-  <div class="modal-back" id="modalBack"><div class="modal" role="dialog"><h3 id="modalTitle">Modal</h3><div class="modal-body" id="modalBody"></div><div style="text-align:right;margin-top:8px"><button class="btn" id="closeModal">Close</button></div></div></div>
-
   <script>
-    // -- Storage / state
-    const STORAGE_KEY = 'broken_destiny_characters_v2';
-    let characters = [];
-    let currentIndex = 0;
-    let state = null; // current working character
+/* =========================
+   CHARACTER DATA MODEL
+========================= */
+let character = {
+  name: "",
+  image: "",
+  stats: {
+    Strength: 1,
+    Speed: 1,
+    Intelligence: 1,
+    Resistance: 1,
+    Charm: 1,
+    Mastery: 1,
+    Perception: 1,
+    Will: 1,
+    Size: 1,
+    Luck: 1,
+    Stealth: 1,
+    Bravery: 1,
+    Mana: 1,
+    Instinct: 1,
+    Aura: 1
+  },
+  hp: 0,
+  mana: 0,
+  inventory: [],
+  spells: [],
+  modifiers: [],
+  status: [],
+  weapons: [],
+  armor: []
+};
 
-    // default factory
-    function defaultCharacter(){
-      return {
-        id: Date.now().toString(36),
-        name: 'New Character',
-        avatar: '',
-        baseHp: 10,
-        hpCurrent: 10,
-        hpMax: 10,
-        manaCurrent: 5,
-        manaMax: 5,
-        inventory: [],
-        spells: [],
-        mods: [],
-        status: [],
-        armors: ['','',''],
-        armorMods: ['','',''],
-        weapons: [{name:'',mod:''},{name:'',mod:''}],
-        weaponSlots: 2,
-        stats: {str:5,spd:5,int:5,res:0,chr:5,mas:5,per:5,wil:5,size:5,luck:5,ste:5,bra:0,manaTier:5,ins:0,aura:0},
-        cosmic: {inversion:false}
-      };
-    }
+/* =========================
+   UI SETUP
+========================= */
+const imgInput = document.getElementById("uploadImage");
+const charImg = document.getElementById("charImage");
+const charNameInput = document.getElementById("charName");
+const statsDiv = document.getElementById("stats");
 
-    // DOM refs
-    const charListEl = document.getElementById('charList');
-    const avatarInput = document.getElementById('avatarInput');
-    const avatarImg = document.getElementById('avatarImg');
-    const playerName = document.getElementById('playerName');
-    const hpCurrentEl = document.getElementById('hpCurrent');
-    const hpMaxEl = document.getElementById('hpMax');
-    const manaCurrentEl = document.getElementById('manaCurrent');
-    const manaMaxEl = document.getElementById('manaMax');
+function renderStats() {
+  statsDiv.innerHTML = "";
+  for (let key in character.stats) {
+    const val = character.stats[key];
+    let row = document.createElement("div");
+    row.innerHTML = `
+      <label>${key}: </label>
+      <input type="number" min="0" max="99" value="${val}" 
+        onchange="updateStat('${key}', this.value)">
+    `;
+    statsDiv.appendChild(row);
+  }
+  recalcDerived();
+}
 
-    // other refs
-    const invList = document.getElementById('invList');
-    const spellList = document.getElementById('spellList');
-    const modList = document.getElementById('modList');
-    const statusList = document.getElementById('statusList');
-    const weaponsContainer = document.getElementById('weaponsContainer');
+function updateStat(stat, value) {
+  character.stats[stat] = parseInt(value);
+  recalcDerived();
+}
 
-    // helper: deep clone
-    function clone(obj){ return JSON.parse(JSON.stringify(obj)); }
+function recalcDerived() {
+  // HP = 100 per Resistance up to 10, then +10 per extra
+  let res = character.stats.Resistance;
+  if (res <= 10) character.hp = res * 100;
+  else character.hp = 1000 + (res - 10) * 10;
 
-    // load/save all characters
-    function saveAll(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(characters)); }catch(e){ console.error('saveAll',e); }
-      renderCharList();
-    }
-    function loadAll(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if(!raw){ characters = [defaultCharacter()]; currentIndex = 0; saveAll(); }
-        else{ characters = JSON.parse(raw); if(!Array.isArray(characters) || characters.length === 0){ characters = [defaultCharacter()]; } if(currentIndex >= characters.length) currentIndex = 0; }
-      }catch(e){ characters = [defaultCharacter()]; currentIndex=0; }
-      renderCharList();
-      loadCharacter(currentIndex);
-    }
+  // Mana pool based on Mana stat
+  let manaStat = character.stats.Mana;
+  let manaMap = {10: Infinity, 9: 25000, 8: 5000, 7: 2000, 6: 1250, 5: 750, 4: 500, 3: 200, 2: 100, 1: 0};
+  character.mana = manaMap[manaStat] || 0;
 
-    // render character list
-    function renderCharList(){
-      charListEl.innerHTML = '';
-      characters.forEach((c,i)=>{
-        const wrap = document.createElement('div'); wrap.className='char-item';
-        const nameBtn = document.createElement('button'); nameBtn.className='btn'; nameBtn.textContent = (i===currentIndex? '▶ ':'') + (c.name || 'Unnamed');
-        nameBtn.addEventListener('click', ()=>{ saveCharacter(currentIndex); currentIndex = i; loadCharacter(i); });
-        const exportBtn = document.createElement('button'); exportBtn.className='btn'; exportBtn.textContent='⋯';
-        exportBtn.title = 'Export this character';
-        exportBtn.addEventListener('click', ()=>{ downloadJSON(c, (c.name||'character') + '.json'); });
-        wrap.appendChild(nameBtn); wrap.appendChild(exportBtn);
-        charListEl.appendChild(wrap);
-      });
-    }
+  statsDiv.querySelectorAll("div").forEach(div => {
+    if (div.innerText.includes("Resistance")) div.querySelector("input").style.background = "#222";
+  });
+}
+renderStats();
 
-    // switch/load character into working state
-    function loadCharacter(i){
-      if(i < 0 || i >= characters.length) return;
-      state = clone(characters[i]);
-      currentIndex = i;
-      applyStateToUI();
-      renderCharList();
-    }
-    function saveCharacter(i){
-      if(!state) return;
-      characters[i] = clone(state);
-      saveAll();
-    }
+/* =========================
+   IMAGE UPLOAD
+========================= */
+imgInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      charImg.src = ev.target.result;
+      character.image = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
 
-    // download helper
-    function downloadJSON(obj, filename){
-      const data = JSON.stringify(obj, null, 2);
-      const b = new Blob([data], {type:'application/json'});
-      const url = URL.createObjectURL(b);
-      const a = document.createElement('a'); a.href = url; a.download = filename || 'data.json'; a.click();
-      URL.revokeObjectURL(url);
-    }
+/* =========================
+   CHARACTER NAME
+========================= */
+charNameInput.addEventListener("input", e => {
+  character.name = e.target.value;
+});
 
-    // UI: add / delete characters
-    document.getElementById('addCharacter').addEventListener('click', ()=>{
-      if(state) saveCharacter(currentIndex);
-      const c = defaultCharacter();
-      characters.push(c);
-      currentIndex = characters.length-1;
-      saveAll();
-      loadCharacter(currentIndex);
-    });
-    document.getElementById('deleteCharacter').addEventListener('click', ()=>{
-      if(!state) return;
-      if(!confirm('Delete current character?')) return;
-      characters.splice(currentIndex, 1);
-      if(characters.length === 0) characters.push(defaultCharacter());
-      currentIndex = Math.max(0, currentIndex - 1);
-      saveAll();
-      loadCharacter(currentIndex);
-    });
+/* =========================
+   TAB SWITCHING
+========================= */
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById(tab.dataset.tab).classList.add("active");
+  });
+});
 
-    // avatar upload
-    document.querySelector('.upload-btn').addEventListener('click', ()=> avatarInput.click());
-    avatarInput.addEventListener('change', async (e)=>{
-      const f = e.target.files[0]; if(!f) return;
-      const data = await fileToDataUrl(f);
-      state.avatar = data; avatarImg.src = data;
-      saveCharacter(currentIndex); saveAll();
-    });
-
-    // name binding
-    playerName.addEventListener('input', ()=>{
-      if(!state) return;
-      state.name = playerName.value;
-      saveCharacter(currentIndex); saveAll();
-      renderCharList();
-    });
-
-    // finish turn: cooldowns & status durations
-    document.getElementById('finishTurn').addEventListener('click', ()=>{
-      if(!state) return;
-      // spells cooldown decrement
-      (state.spells || []).forEach(s => {
-        if(s.cdRemaining && s.cdRemaining > 0) s.cdRemaining = Math.max(0, s.cdRemaining - 1);
-      });
-      // status durations decrement (remove expired)
-      for(let i = state.status.length - 1; i >= 0; i--){
-        const st = state.status[i];
-        if(st.turns && Number(st.turns) > 0){
-          st.turns = Number(st.turns) - 1;
-          if(st.turns <= 0) state.status.splice(i,1);
-        }
+/* =========================
+   INVENTORY
+========================= */
+const inventoryList = document.getElementById("inventoryList");
+document.getElementById("addItem").addEventListener("click", () => {
+  let item = prompt("Item name?");
+  if (item) {
+    character.inventory.push(item);
+    renderList(inventoryList, character.inventory);
+  }
+});
+function renderList(listEl, arr) {
+  listEl.innerHTML = "";
+  arr.forEach((item, i) => {
+    let li = document.createElement("li");
+    li.textContent = item;
+    li.addEventListener("click", () => {
+      if (confirm("Remove item?")) {
+        arr.splice(i,1);
+        renderList(listEl, arr);
       }
-      renderSpells(); renderStatuses(); saveCharacter(currentIndex); saveAll();
-      alert('Turn finished: cooldowns and status durations updated.');
     });
+    listEl.appendChild(li);
+  });
+}
 
-    // export/import global
-    document.getElementById('exportChar').addEventListener('click', ()=>{ if(state) downloadJSON(state, (state.name||'character') + '.json'); });
-    document.getElementById('importChar').addEventListener('click', ()=> document.getElementById('importFile').click() );
-    document.getElementById('importFile').addEventListener('change', (e)=>{
-      const f = e.target.files[0]; if(!f) return;
-      const r = new FileReader(); r.onload = () => {
-        try{
-          const obj = JSON.parse(r.result);
-          characters.push(obj);
-          saveAll(); currentIndex = characters.length - 1; loadCharacter(currentIndex);
-          alert('Imported character.');
-        }catch(err){
-          alert('Invalid JSON file.');
-        }
-      };
-      r.readAsText(f);
-    });
+/* =========================
+   SPELLS
+========================= */
+const spellList = document.getElementById("spellList");
+document.getElementById("addSpell").addEventListener("click", () => {
+  let spellName = prompt("Spell name?");
+  if (spellName) {
+    character.spells.push({name: spellName, uses: 0, cooldown: 0});
+    renderSpells();
+  }
+});
+function renderSpells() {
+  spellList.innerHTML = "";
+  character.spells.forEach((s, i) => {
+    let level = Math.min(Math.max(Math.floor(Math.pow((s.uses*10/3.98), (1/1.7))),1),100);
+    let li = document.createElement("li");
+    li.innerHTML = `${s.name} (Level ${level}) 
+      <button onclick="castSpell(${i})">Cast</button> 
+      <span>Cooldown: ${s.cooldown}</span>`;
+    spellList.appendChild(li);
+  });
+}
+function castSpell(i) {
+  let spell = character.spells[i];
+  if (spell.cooldown > 0) { alert("Spell on cooldown!"); return; }
+  spell.uses++;
+  spell.cooldown = 3; // Example cooldown
+  renderSpells();
+}
+function nextTurn() {
+  character.spells.forEach(s => { if (s.cooldown > 0) s.cooldown--; });
+  renderSpells();
+}
 
-    // -- Inventory
-    document.getElementById('addItem').addEventListener('click', ()=>{
-      const text = document.getElementById('invInput').value.trim();
-      const qty = Math.max(1, parseInt(document.getElementById('invQty').value) || 1);
-      if(!text) return alert('Enter an item name.');
-      state.inventory.push({text, qty});
-      document.getElementById('invInput').value=''; document.getElementById('invQty').value='';
-      renderInventory(); saveCharacter(currentIndex); saveAll();
-    });
-
-    function renderInventory(){
-      invList.innerHTML = '';
-      (state.inventory || []).forEach((it, i)=>{
-        const el = document.createElement('div'); el.className='item';
-        el.innerHTML = `<div><strong>${escapeHtml(it.text)}</strong><div class="small muted">x ${it.qty}</div></div><div><button class="btn" data-i="${i}">Edit</button> <button class="btn" data-r="${i}">Remove</button></div>`;
-        el.querySelector('[data-i]').addEventListener('click', ()=>{
-          const name = prompt('Edit item name', it.text);
-          if(name !== null) state.inventory[i].text = name;
-          const q = prompt('Qty', it.qty);
-          if(q !== null) state.inventory[i].qty = Math.max(0, parseInt(q) || 0);
-          renderInventory(); saveCharacter(currentIndex); saveAll();
-        });
-        el.querySelector('[data-r]').addEventListener('click', ()=>{
-          state.inventory.splice(i,1); renderInventory(); saveCharacter(currentIndex); saveAll();
-        });
-        invList.appendChild(el);
-      });
+/* =========================
+   MODIFIERS, STATUS, WEAPONS, ARMOR
+========================= */
+function setupSection(buttonId, listId, array) {
+  const listEl = document.getElementById(listId);
+  document.getElementById(buttonId).addEventListener("click", () => {
+    let val = prompt("Enter name?");
+    if (val) {
+      array.push(val);
+      renderList(listEl, array);
     }
+  });
+}
+setupSection("addModifier","modifierList",character.modifiers);
+setupSection("addStatus","statusList",character.status);
+setupSection("addWeapon","weaponList",character.weapons);
+setupSection("addArmor","armorList",character.armor);
 
-    // -- Spells (uses, level formula, cooldowns, cast)
-    document.getElementById('addSpell').addEventListener('click', ()=>{
-      const name = document.getElementById('spellName').value.trim();
-      const cost = Math.max(0, Number(document.getElementById('spellCost').value) || 0);
-      const cd = Math.max(0, parseInt(document.getElementById('spellCooldown').value) || 0);
-      if(!name) return alert('Enter a spell name.');
-      state.spells.push({name, cost, uses:0, cooldown: cd, cdRemaining: 0});
-      document.getElementById('spellName').value=''; document.getElementById('spellCost').value=''; document.getElementById('spellCooldown').value='';
-      renderSpells(); saveCharacter(currentIndex); saveAll();
-    });
+/* =========================
+   EXPORT / IMPORT
+========================= */
+document.getElementById("saveData").addEventListener("click", () => {
+  document.getElementById("dataIO").value = JSON.stringify(character, null, 2);
+});
+document.getElementById("loadData").addEventListener("click", () => {
+  try {
+    let data = JSON.parse(document.getElementById("dataIO").value);
+    character = data;
+    charNameInput.value = character.name;
+    charImg.src = character.image;
+    renderStats();
+    renderList(inventoryList, character.inventory);
+    renderSpells();
+    renderList(document.getElementById("modifierList"), character.modifiers);
+    renderList(document.getElementById("statusList"), character.status);
+    renderList(document.getElementById("weaponList"), character.weapons);
+    renderList(document.getElementById("armorList"), character.armor);
+  } catch(e) {
+    alert("Invalid JSON");
+  }
+});
+</script>
 
-    function computeSpellLevel(x){
-      x = Number(x) || 0;
-      const val = Math.pow((x * 10 / 3.98), 1 / 1.7);
-      const n = Math.min(Math.max(Math.floor(val), 1), 100);
-      return n;
-    }
-
-    function renderSpells(){
-      spellList.innerHTML = '';
-      (state.spells || []).forEach((s,i)=>{
-        const lvl = computeSpellLevel(s.uses);
-        const cdRem = s.cdRemaining || 0;
-        const el = document.createElement('div'); el.className='item';
-        el.innerHTML = `<div><strong>${escapeHtml(s.name)}</strong><div class="small muted">Cost: ${s.cost} • Uses: ${s.uses} • Level: ${lvl} • CD: ${cdRem}/${s.cooldown}</div></div><div><button class="btn" data-cast="${i}">Cast</button> <button class="btn" data-use="${i}">Use(no cost)</button> <button class="btn" data-r="${i}">Remove</button></div>`;
-        el.querySelector('[data-cast]').addEventListener('click', ()=> castSpell(i));
-        el.querySelector('[data-use]').addEventListener('click', ()=> { s.uses = (s.uses||0) + 1; renderSpells(); saveCharacter(currentIndex); saveAll(); });
-        el.querySelector('[data-r]').addEventListener('click', ()=> { state.spells.splice(i,1); renderSpells(); saveCharacter(currentIndex); saveAll(); });
-        spellList.appendChild(el);
-      });
-    }
-
-    function castSpell(i){
-      const s = state.spells[i];
-      if(!s) return;
-      if(s.cdRemaining && s.cdRemaining > 0){ alert('Spell is on cooldown for '+s.cdRemaining+' more turns'); return; }
-      // bravery reduction: 0.001% less mana per bravery point -> fraction per point = 0.00001
-      const bravery = Number(state.stats.bra) || 0;
-      const braveryReduction = bravery * 0.00001;
-      const manaCost = Math.max(0, Math.ceil(s.cost * (1 - braveryReduction)));
-      if(state.manaMax !== Infinity && state.manaCurrent < manaCost){ alert('Not enough mana ('+state.manaCurrent+' / need '+manaCost+')'); return; }
-      // subtract mana (if infinite, nothing to subtract)
-      if(state.manaMax !== Infinity) state.manaCurrent = Math.max(0, state.manaCurrent - manaCost);
-      s.uses = (s.uses || 0) + 1;
-      s.cdRemaining = s.cooldown || 0;
-      renderSpells(); renderDerived(); saveCharacter(currentIndex); saveAll();
-    }
-
-    // -- Modifiers
-    document.getElementById('addMod').addEventListener('click', ()=>{
-      const name = document.getElementById('modName').value.trim();
-      const grantItem = document.getElementById('modGrantItem').value.trim();
-      const grantQty = Math.max(0, parseInt(document.getElementById('modGrantQty').value) || 0);
-      if(!name) return alert('Enter a modifier name.');
-      const m = {name, grantItem, grantQty};
-      state.mods.push(m);
-      if(grantItem && grantQty > 0) state.inventory.push({text:grantItem, qty:grantQty});
-      document.getElementById('modName').value=''; document.getElementById('modGrantItem').value=''; document.getElementById('modGrantQty').value='';
-      renderMods(); renderInventory(); saveCharacter(currentIndex); saveAll();
-    });
-
-    function renderMods(){
-      modList.innerHTML = '';
-      (state.mods || []).forEach((m,i)=>{
-        const el = document.createElement('div'); el.className='item';
-        el.innerHTML = `<div>${escapeHtml(m.name)} ${m.grantItem?('<div class="small muted">Grants: '+escapeHtml(m.grantItem)+' x'+m.grantQty+'</div>'):''}</div><div><button class="btn" data-r="${i}">Remove</button></div>`;
-        el.querySelector('[data-r]').addEventListener('click', ()=> { state.mods.splice(i,1); renderMods(); saveCharacter(currentIndex); saveAll(); });
-        modList.appendChild(el);
-      });
-    }
-
-    // -- Status
-    document.getElementById('addStatus').addEventListener('click', ()=>{
-      const name = document.getElementById('statusName').value.trim();
-      const turns = parseInt(document.getElementById('statusTurns').value) || 0;
-      if(!name) return alert('Enter a status name.');
-      state.status.push({name, turns});
-      document.getElementById('statusName').value=''; document.getElementById('statusTurns').value='';
-      renderStatuses(); saveCharacter(currentIndex); saveAll();
-    });
-
-    function renderStatuses(){
-      statusList.innerHTML = '';
-      (state.status || []).forEach((s,i)=>{
-        const el = document.createElement('div'); el.className='item';
-        el.innerHTML = `<div>${escapeHtml(s.name)} <div class="small muted">${s.turns?('Turns: '+s.turns):''}</div></div><div><button class="btn" data-r="${i}">Remove</button></div>`;
-        el.querySelector('[data-r]').addEventListener('click', ()=> { state.status.splice(i,1); renderStatuses(); saveCharacter(currentIndex); saveAll(); });
-        statusList.appendChild(el);
-      });
-    }
-
-    // -- Weapons
-    document.getElementById('addWeaponSlot').addEventListener('click', ()=>{
-      state.weapons.push({name:'', mod:''}); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); saveCharacter(currentIndex); saveAll();
-    });
-    document.getElementById('removeWeaponSlot').addEventListener('click', ()=>{
-      if(state.weapons.length > 1){ state.weapons.pop(); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); saveCharacter(currentIndex); saveAll(); }
-    });
-    function renderWeaponsSlots(){
-      weaponsContainer.innerHTML = '';
-      (state.weapons || []).forEach((w,i)=>{
-        const wrap = document.createElement('div'); wrap.className='slot'; wrap.style.marginBottom = '8px';
-        wrap.innerHTML = `<div class="small muted">Slot ${i+1}</div><input data-wi="${i}" placeholder="Name" value="${escapeHtml(w.name)}" /><input data-wm="${i}" placeholder="Damage / Bonus" value="${escapeHtml(w.mod)}" />`;
-        wrap.querySelector(`[data-wi="${i}"]`).addEventListener('input', e=>{ state.weapons[i].name = e.target.value; saveCharacter(currentIndex); saveAll(); });
-        wrap.querySelector(`[data-wm="${i}"]`).addEventListener('input', e=>{ state.weapons[i].mod = e.target.value; saveCharacter(currentIndex); saveAll(); });
-        weaponsContainer.appendChild(wrap);
-      });
-    }
-
-    // -- Stats logic
-    const statIds = ['str','spd','int','res','chr','mas','per','wil','size','luck','ste','bra','manaTier','ins','aura'];
-    statIds.forEach(id=>{
-      const el = document.getElementById('stat_'+id);
-      if(el) el.addEventListener('input', ()=>{ if(!state) return; state.stats[id] = Number(el.value) || 0; });
-    });
-
-    function resistanceHpBonus(res){
-      res = Number(res) || 0;
-      if(res <= 10) return res * 100;
-      // beyond 10: first 10 -> 1000, each extra = +10
-      return 10 * 100 + (res - 10) * 10;
-    }
-    function willDamageMultiplier(will){
-      will = Number(will) || 0;
-      if(will >= 10) return 0.5 + 0.001 * (will - 10);
-      return 1 - (0.05 * will);
-    }
-    function instinctDodgeChance(inst){ return 0.01 * (Number(inst)||0); }
-    function auraManaMultiplier(aura){ return 1 + (0.1 * (Number(aura)||0)); }
-    function manaCapacityFromTier(t){
-      const map = {10:Infinity,9:25000,8:5000,7:2000,6:1250,5:750,4:500,3:200,2:100,1:0};
-      return map[t] === undefined ? map[5] : map[t];
-    }
-
-    // Apply stats (does NOT overwrite base stats on inversion; uses a temp view)
-    function applyStats(){
-      if(!state) return;
-      // compute effective stats w/ inversion overlay if enabled
-      const effective = {}; Object.keys(state.stats).forEach(k => effective[k] = Number(state.stats[k] || 0));
-      if(state.cosmic && state.cosmic.inversion){
-        // inversion: new = 11 - base (works for 0..10 scale)
-        Object.keys(effective).forEach(k => { effective[k] = 11 - (Number(state.stats[k]) || 0); });
-      }
-      // HP max = baseHp + resistance bonus
-      const resBonus = resistanceHpBonus(effective.res);
-      state.hpMax = (Number(state.baseHp) || 10) + resBonus;
-      // Mana max based on tier and aura
-      const manaBase = manaCapacityFromTier(effective.manaTier);
-      const auraMult = auraManaMultiplier(effective.aura);
-      state.manaMax = manaBase === Infinity ? Infinity : Math.round(manaBase * auraMult);
-      // clamp current values
-      if(state.hpCurrent == null) state.hpCurrent = state.hpMax;
-      if(state.manaCurrent == null) state.manaCurrent = (state.manaMax === Infinity ? 0 : state.manaMax);
-      state.hpCurrent = Math.min(state.hpCurrent, state.hpMax);
-      if(state.manaMax !== Infinity) state.manaCurrent = Math.min(state.manaCurrent, state.manaMax);
-
-      // update UI
-      hpMaxEl.textContent = state.hpMax;
-      hpCurrentEl.textContent = state.hpCurrent;
-      manaMaxEl.textContent = state.manaMax === Infinity ? '∞' : state.manaMax;
-      manaCurrentEl.textContent = state.manaCurrent;
-
-      // update derived values display
-      renderDerived(effective);
-      // persist
-      saveCharacter(currentIndex); saveAll();
-    }
-
-    function renderDerived(effectiveStats){
-      if(!state) return;
-      const eff = effectiveStats || Object.assign({}, state.stats);
-      // if inversion on, eff already provided by applyStats
-      const will = eff.wil || 0;
-      const inst = eff.ins || 0;
-      const aura = eff.aura || 0;
-      const manaTier = eff.manaTier || 5;
-      const lines = [];
-      lines.push('HP Max (with Resistance) = ' + state.hpMax);
-      lines.push('Will damage multiplier = x' + willDamageMultiplier(will).toFixed(4) + ' (Will = ' + will + ')');
-      lines.push('Instinct dodge chance = ' + (instinctDodgeChance(inst) * 100).toFixed(2) + '%');
-      const manaCap = manaCapacityFromTier(manaTier);
-      lines.push('Mana base capacity (tier ' + manaTier + ') = ' + (manaCap === Infinity ? '∞' : manaCap) + ' • Aura multiplier x' + auraManaMultiplier(aura).toFixed(3));
-      lines.push('Aura total mana cap = ' + (manaCap === Infinity ? '∞' : Math.round(manaCap * auraManaMultiplier(aura))));
-      lines.push('Bravery reduces mana usage by 0.001% per level when casting (applied at cast).');
-      document.getElementById('derivedValues').innerText = lines.join('\n');
-    }
-
-    // -- Utility & rendering
-    function fileToDataUrl(file){ return new Promise((res, rej) => { const r = new FileReader(); r.onload = ()=> res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
-    function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    function applyStateToUI(){
-      if(!state) return;
-      if(state.avatar) avatarImg.src = state.avatar; else avatarImg.src = 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'800\\' height=\\'400\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23131317\\'/><text x=\\'50%\\' y=\\'50%\\' fill=\\'%23999\\' font-size=\\'26\\' text-anchor=\\'middle\\' dominant-baseline=\\'middle\\'>Upload image</text></svg>';
-      playerName.value = state.name || '';
-      hpCurrentEl.textContent = state.hpCurrent;
-      hpMaxEl.textContent = state.hpMax;
-      manaCurrentEl.textContent = state.manaCurrent;
-      manaMaxEl.textContent = state.manaMax === Infinity ? '∞' : state.manaMax;
-      // stats
-      statIds.forEach(id => {
-        const el = document.getElementById('stat_'+id);
-        if(el) el.value = state.stats[id] || 0;
-      });
-      // optional other fields (race/class)
-      document.getElementById('race').value = state.race || '';
-      document.getElementById('subrace').value = state.subrace || '';
-      document.getElementById('archetype').value = state.archetype || '';
-      document.getElementById('class').value = state.class || '';
-      // lists
-      renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots();
-      // derived display
-      applyStats();
-    }
-
-    // tab switching
-    document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', ()=>{
-      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-      const name = t.dataset.tab;
-      document.querySelectorAll('.panel-page').forEach(p => p.style.display = (p.dataset.page === name) ? 'block' : 'none');
-    }));
-    document.getElementById('openInventory').addEventListener('click', ()=> document.querySelector('[data-tab="inventory"]').click());
-    document.getElementById('openSpells').addEventListener('click', ()=> document.querySelector('[data-tab="spells"]').click());
-    document.getElementById('openMods').addEventListener('click', ()=> document.querySelector('[data-tab="mods"]').click());
-
-    // initial load
-    loadAll();
-
-    // modal close (not used much now)
-    document.getElementById('closeModal').addEventListener('click', ()=> document.getElementById('modalBack').style.display='none');
-  </script>
 </body>
 </html>
