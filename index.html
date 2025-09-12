@@ -1,282 +1,416 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>D&D Character Creator</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DnD Player Counter — Single File</title>
+  <style>
+    :root{
+      --bg:#0b0b0f; --panel:#0f1014; --muted:#9aa0a6; --accent:#ff3b3b; --glass: rgba(255,255,255,0.03);
+      --card-radius:14px;
+      font-family: Inter, system-ui, -apple-system, Roboto, 'Segoe UI', 'Helvetica Neue', Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#07070a 0%, #0b0b0f 60%);color:#e8e8ea}
+    .app{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:320px 1fr;gap:18px}
+
+    /* left column */
+    .card{background:var(--panel);border-radius:var(--card-radius);padding:16px;box-shadow:0 6px 30px rgba(0,0,0,0.6)}
+    .avatar{height:180px;border-radius:12px;background:linear-gradient(180deg,#111 0%, #1a1a1f 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+    .avatar img{width:100%;height:100%;object-fit:cover}
+    .upload-btn{position:absolute;right:8px;bottom:8px;background:var(--glass);border-radius:8px;padding:6px 8px;font-size:13px;color:var(--muted);cursor:pointer}
+
+    .player-name{font-size:22px;margin:12px 0 6px;display:flex;gap:8px;align-items:center}
+    .player-name input{flex:1;background:transparent;border:1px dashed rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:inherit}
+
+    .hp-mana{display:flex;gap:8px;margin-top:8px}
+    .stat{flex:1;background:var(--glass);padding:10px;border-radius:10px;text-align:center}
+    .stat .label{font-size:12px;color:var(--muted)}
+    .stat .value{font-size:20px;margin-top:6px}
+    .stat .btns{margin-top:8px;display:flex;gap:6px;justify-content:center}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:6px 8px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .btn.primary{border-color:var(--accent);color:var(--accent)}
+
+    .quick-row{display:flex;gap:8px;margin-top:12px}
+    .quick-btn{flex:1;padding:10px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.03)}
+
+    /* right column */
+    .tabs{display:flex;gap:8px;margin-bottom:12px}
+    .tab{padding:10px 12px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.02);color:var(--muted)}
+    .tab.active{background:linear-gradient(90deg, rgba(255,59,59,0.12), rgba(255,59,59,0.06));color:var(--accent);border:1px solid rgba(255,59,59,0.12)}
+
+    .panel{background:var(--panel);padding:12px;border-radius:var(--card-radius);min-height:380px}
+    .list{display:block}
+    .list .item{display:flex;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:8px;background:rgba(0,0,0,0.25)}
+    .small{font-size:13px;color:var(--muted)}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .control{flex:1;min-width:140px}
+
+    /* armor/weapons grid */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .slot{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px}
+    .slot input{width:100%;margin-top:6px;padding:6px;border-radius:6px;background:transparent;border:1px dashed rgba(255,255,255,0.04);color:inherit}
+
+    /* modal */
+    .modal-back{position:fixed;inset:0;background:rgba(2,2,3,0.6);display:none;align-items:center;justify-content:center}
+    .modal{width:720px;background:#0e0f13;padding:14px;border-radius:12px}
+    .modal h3{margin:0 0 8px}
+    .modal .modal-body{max-height:420px;overflow:auto}
+    .row{display:flex;gap:8px;align-items:center}
+    .row > *{flex:1}
+    .muted{color:var(--muted)}
+
+    footer{margin-top:10px;text-align:right;color:var(--muted);font-size:13px}
+
+    @media (max-width:900px){.app{grid-template-columns:1fr;max-width:760px;padding:12px}.avatar{height:140px}}
+  </style>
 </head>
 <body>
-  <div class="character-creator">
-    <div class="header-container">
-      <h1><i class="fas fa-dragon"></i> D&D Character Creator</h1>
-      <button class="theme-toggle" id="theme-toggle">
-        <i class="fas fa-moon"></i>
-      </button>
-    </div>
-    
-    <div class="tab-container">
-      <div class="tab active" data-tab="stats">Base Stats</div>
-      <div class="tab" data-tab="races">Races</div>
-      <div class="tab" data-tab="archetypes">Archetypes</div>
-    </div>
-
-    <div class="tab-content" id="archetypes-tab">
-      <div class="race-selector">
-        <h3><i class="fas fa-chess-queen"></i> Archetype Selection</h3>
-        <div id="archetype-slots">
-          <!-- Default archetype slot will be added here -->
-        </div>
-        <div class="input-group">
-          <button id="add-archetype"><i class="fas fa-plus"></i> Add Archetype</button>
-          <button id="modify-archetype"><i class="fas fa-edit"></i> Modify/Add Archetype</button>
-        </div>
-      </div>
-      <!-- Archetype Subclass Selection -->
-      <div id="archetype-subclass-container" style="margin-top: 20px;">
-        <h4><i class="fas fa-layer-group"></i> Subclass Selection</h4>
-        <div id="subclass-selection"></div>
+  <div class="app">
+    <div class="card">
+      <div class="avatar" id="avatarBox">
+        <img id="avatarImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400'><rect width='100%' height='100%' fill='%23131317'/><text x='50%' y='50%' fill='%23999' font-size='26' text-anchor='middle' dominant-baseline='middle'>Upload image</text></svg>" alt="avatar">
+        <label class="upload-btn" title="Upload image">
+          <input id="avatarInput" type="file" accept="image/*" style="display:none">
+          📁 Upload
+        </label>
       </div>
 
-      <!-- Archetype Level Benefits -->
-      <div id="archetype-benefits-container" style="margin-top: 20px;">
-        <h4><i class="fas fa-level-up-alt"></i> Level Benefits</h4>
-        <div id="archetype-benefits"></div>
+      <div class="player-name">
+        <strong style="color:var(--accent)">Name</strong>
+        <input id="playerName" placeholder="Character name" />
       </div>
 
-      <!-- Archetype Modifiers Display - Now shows all archetype modifiers -->
-      <div class="modifiers">
-        <h3><i class="fas fa-bolt"></i> Archetype Modifiers</h3>
-        <ul id="archetype-modifier-list"></ul>
-      </div>
-    </div>
-
-    <div class="tab-content active" id="stats-tab">
-      <div class="stats-editor">
-        <h3><i class="fas fa-sliders-h"></i> Edit Base Stats</h3>
-        <div class="stat-input-group">
-          <div class="stat-input">
-            <label for="base-strength">Strength</label>
-            <input type="number" id="base-strength" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-speed">Speed</label>
-            <input type="number" id="base-speed" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-resistance">Resistance</label>
-            <input type="number" id="base-resistance" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-intelligence">Intelligence</label>
-            <input type="number" id="base-intelligence" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-charisma">Charisma</label>
-            <input type="number" id="base-charisma" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-maestry">Maestry</label>
-            <input type="number" id="base-maestry" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-perception">Perception</label>
-            <input type="number" id="base-perception" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-will">Will</label>
-            <input type="number" id="base-will" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-bravery">Bravery</label>
-            <input type="number" id="base-bravery" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-mana">Mana</label>
-            <input type="number" id="base-mana" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-luck">Luck</label>
-            <input type="number" id="base-luck" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-stealth">Stealth</label>
-            <input type="number" id="base-stealth" value="5" min="0">
-          </div>
-          <div class="stat-input">
-            <label for="base-size">Size</label>
-            <input type="number" id="base-size" value="5" min="1">
+      <div class="hp-mana">
+        <div class="stat">
+          <div class="label">HP</div>
+          <div class="value"><span id="hpCurrent">10</span> / <span id="hpMax">10</span></div>
+          <div class="btns">
+            <button class="btn" data-act="hp-minus">-</button>
+            <button class="btn primary" data-act="hp-plus">+</button>
+            <button class="btn" data-act="hp-heal">Heal</button>
           </div>
         </div>
-        <button id="update-stats"><i class="fas fa-sync-alt"></i> Update Stats</button>
+        <div class="stat">
+          <div class="label">MANA</div>
+          <div class="value"><span id="manaCurrent">5</span> / <span id="manaMax">5</span></div>
+          <div class="btns">
+            <button class="btn" data-act="mana-minus">-</button>
+            <button class="btn primary" data-act="mana-plus">+</button>
+            <button class="btn" data-act="mana-rest">Rest</button>
+          </div>
+        </div>
       </div>
-  
-      <div class="stats-preview">
-        <h3><i class="fas fa-chart-bar"></i> Current Stats & Modifiers</h3>
-        <div class="stat" id="strength">Strength: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="speed">Speed: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="resistance">Resistance: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="intelligence">Intelligence: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="charisma">Charisma: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="maestry">Maestry: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="perception">Perception: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="will">Will: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="bravery">Bravery: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="mana">Mana: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="luck">Luck: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="stealth">Stealth: <span class="stat-value">5</span> (Mod: <span class="mod-value">+0</span>)</div>
-        <div class="stat" id="size">Size: <span class="stat-value">5</span> (<span class="size-value">1.50m</span>)</div>
+
+      <div class="quick-row">
+        <div class="quick-btn" id="openInventory">Inventory</div>
+        <div class="quick-btn" id="openSpells">Spells</div>
+        <div class="quick-btn" id="openMods">Modifiers</div>
       </div>
+
+      <div style="margin-top:12px">
+        <div class="small muted">Armor Slots (up to 3)</div>
+        <div class="grid" style="margin-top:8px">
+          <div class="slot">
+            <div class="small muted">Armor 1</div>
+            <input data-slot="armor" data-index="0" placeholder="Name (e.g. Chainmail)" />
+            <input data-slot="armor-mod" data-index="0" placeholder="Modifier (+2 STR, +1 HP)" />
+          </div>
+          <div class="slot">
+            <div class="small muted">Armor 2</div>
+            <input data-slot="armor" data-index="1" placeholder="Name (optional)" />
+            <input data-slot="armor-mod" data-index="1" placeholder="Modifier" />
+          </div>
+          <div class="slot">
+            <div class="small muted">Armor 3</div>
+            <input data-slot="armor" data-index="2" placeholder="Name (optional)" />
+            <input data-slot="armor-mod" data-index="2" placeholder="Modifier" />
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="small muted">Weapons</div>
+        <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:8px">
+          <div class="slot">
+            <div class="small muted">Main Weapon</div>
+            <input data-slot="weapon" data-index="0" placeholder="Name (e.g. Longsword)" />
+            <input data-slot="weapon-mod" data-index="0" placeholder="Damage / Bonus" />
+          </div>
+          <div class="slot">
+            <div class="small muted">Side Weapon</div>
+            <input data-slot="weapon" data-index="1" placeholder="Name (e.g. Dagger)" />
+            <input data-slot="weapon-mod" data-index="1" placeholder="Damage / Bonus" />
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:13px;color:var(--muted)">You can add more weapon slots from the right panel.
+        </div>
+      </div>
+
+      <footer>Autosaves locally • Use the right-side panel to manage lists</footer>
     </div>
 
-    <div class="tab-content" id="races-tab">
-      <!-- Race Selection -->
-      <div class="race-selector">
-        <h3><i class="fas fa-users"></i> Race Selection</h3>
-        <div id="race-slots">
-          <!-- Default race slot will be added here -->
-        </div>
-        <div class="input-group">
-          <button id="add-race"><i class="fas fa-plus"></i> Add Race</button>
-          <button id="modify-race"><i class="fas fa-edit"></i> Modify/Add Race</button>
-        </div>
+    <div>
+      <div class="tabs" role="tablist">
+        <div class="tab active" data-tab="inventory">Inventory</div>
+        <div class="tab" data-tab="spells">Spells</div>
+        <div class="tab" data-tab="mods">Modifiers</div>
+        <div class="tab" data-tab="status">Status Effects</div>
+        <div class="tab" data-tab="weapons">Weapons</div>
+        <div class="tab" data-tab="settings">Settings</div>
       </div>
 
-      <!-- Extra Traits -->
-      <div id="extra-traits-container"></div>
-
-      <!-- Racial Modifiers Display -->
-      <div class="modifiers">
-        <h3><i class="fas fa-bolt"></i> Active Modifiers</h3>
-        <ul id="modifier-list"></ul>
-      </div>
-    </div>
-
-    <!-- JSON Export/Import -->
-    <div class="json-tools">
-      <h3><i class="fas fa-file-export"></i> Data Management</h3>
-      <div class="input-group">
-        <button id="export-data"><i class="fas fa-download"></i> Export Data</button>
-        <button id="import-data"><i class="fas fa-upload"></i> Import Data</button>
-        <input type="file" id="import-file" accept=".json" style="display: none;">
-      </div>
-      <div class="input-group" style="margin-top: 10px;">
-        <input type="text" id="character-name" placeholder="Character Name">
-        <button id="export-character"><i class="fas fa-user"></i> Export Character</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- New Archetype Editor Modal -->
-  <div id="archetype-editor-modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3><i class="fas fa-edit"></i> Archetype Editor</h3>
-      <div>
-        <label for="new-archetype-name">Archetype Name:</label>
-        <input type="text" id="new-archetype-name" placeholder="e.g., Necromancer">
-      </div>
-      <div>
-        <h4><i class="fas fa-sliders-h"></i> Base Modifiers:</h4>
-        <div class="modifier-input">
-          <select class="stat-select">
-            <option value="strength">Strength</option>
-            <option value="speed">Speed</option>
-            <option value="resistance">Resistance</option>
-            <option value="intelligence">Intelligence</option>
-            <option value="charisma">Charisma</option>
-            <option value="maestry">Maestry</option>
-            <option value="perception">Perception</option>
-            <option value="will">Will</option>
-            <option value="bravery">Bravery</option>
-            <option value="mana">Mana</option>
-            <option value="luck">Luck</option>
-            <option value="stealth">Stealth</option>
-            <option value="size">Size</option>
-          </select>
-          <input type="number" class="modifier-value" placeholder="+2">
-          <button class="add-modifier"><i class="fas fa-plus"></i> Add</button>
+      <div class="panel" id="panelRoot">
+        <!-- Inventory panel (default) -->
+        <div class="panel-page" data-page="inventory">
+          <h3>Inventory</h3>
+          <div class="controls">
+            <input id="invInput" placeholder="Add item (e.g. Rope x1)" />
+            <button class="btn primary" id="addItem">Add</button>
+          </div>
+          <div class="list" id="invList" style="margin-top:10px"></div>
         </div>
-        <ul id="archetype-editor-modifier-list"></ul>
-      </div>
-      <div>
-        <h4><i class="fas fa-layer-group"></i> Subclasses:</h4>
-        <div class="extra-section-input">
-          <input type="text" id="new-subclass-name" placeholder="e.g., Blood Mage">
-          <button id="add-subclass"><i class="fas fa-plus"></i> Add Subclass</button>
+
+        <div class="panel-page" data-page="spells" style="display:none">
+          <h3>Spells</h3>
+          <div class="controls">
+            <input id="spellName" placeholder="Spell name" />
+            <input id="spellCost" placeholder="Cost / Slot" />
+            <button class="btn primary" id="addSpell">Add Spell</button>
+          </div>
+          <div id="spellList" class="list" style="margin-top:10px"></div>
         </div>
-        <div id="subclass-modifiers-container"></div>
-      </div>
-      <div>
-        <h4><i class="fas fa-level-up-alt"></i> Level Benefits:</h4>
-        <div class="input-group">
-          <select id="level-select">
-            <option value="1">Level 1</option>
-            <option value="15">Level 15</option>
-            <option value="30">Level 30</option>
-            <option value="50">Level 50</option>
-            <option value="100">Level 100</option>
-          </select>
-          <button id="add-level-section"><i class="fas fa-plus"></i> Add Level Section</button>
+
+        <div class="panel-page" data-page="mods" style="display:none">
+          <h3>Modifiers</h3>
+          <div class="controls">
+            <input id="modName" placeholder="Modifier (e.g. Raze: +2 STR)" />
+            <button class="btn primary" id="addMod">Add</button>
+          </div>
+          <div id="modList" class="list" style="margin-top:10px"></div>
         </div>
-        <div id="level-benefits-container"></div>
-      </div>
-      <div class="action-buttons">
-        <button id="save-archetype"><i class="fas fa-save"></i> Save Archetype</button>
-        <button id="delete-archetype"><i class="fas fa-trash"></i> Delete Archetype</button>
-        <button id="reset-archetype-editor"><i class="fas fa-undo"></i> Reset Editor</button>
+
+        <div class="panel-page" data-page="status" style="display:none">
+          <h3>Status Effects</h3>
+          <div class="controls">
+            <input id="statusName" placeholder="Status (e.g. Poisoned)" />
+            <input id="statusTurns" placeholder="Turns / Duration (optional)" />
+            <button class="btn primary" id="addStatus">Add</button>
+          </div>
+          <div id="statusList" class="list" style="margin-top:10px"></div>
+        </div>
+
+        <div class="panel-page" data-page="weapons" style="display:none">
+          <h3>Weapons — Add/Manage Slots</h3>
+          <div class="controls">
+            <button class="btn" id="addWeaponSlot">Add Weapon Slot</button>
+            <button class="btn" id="removeWeaponSlot">Remove Last Slot</button>
+          </div>
+          <div id="weaponsContainer" style="margin-top:12px"></div>
+        </div>
+
+        <div class="panel-page" data-page="settings" style="display:none">
+          <h3>Settings</h3>
+          <div class="row" style="margin-top:8px">
+            <div><label class="small muted">Save as (slot)</label><input id="saveSlot" placeholder="default" /></div>
+            <div><button class="btn primary" id="saveNow">Save</button></div>
+          </div>
+          <div style="margin-top:12px" class="small muted">Data is stored in your browser's localStorage. Use the save slot to create multiple character entries.</div>
+          <div style="margin-top:12px">
+            <button class="btn" id="exportBtn">Export JSON</button>
+            <button class="btn" id="importBtn">Import JSON</button>
+            <input type="file" id="importFile" accept="application/json" style="display:none">
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <!-- Race Editor Modal -->
-  <div id="race-editor-modal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h3><i class="fas fa-edit"></i> Race Editor</h3>
-      <div>
-        <label for="new-race-name">Race Name:</label>
-        <input type="text" id="new-race-name" placeholder="e.g., Vampire">
-      </div>
-      <div>
-        <h4><i class="fas fa-sliders-h"></i> Base Modifiers:</h4>
-        <div class="modifier-input">
-          <select class="stat-select">
-            <option value="strength">Strength</option>
-            <option value="speed">Speed</option>
-            <option value="resistance">Resistance</option>
-            <option value="intelligence">Intelligence</option>
-            <option value="charisma">Charisma</option>
-            <option value="maestry">Maestry</option>
-            <option value="perception">Perception</option>
-            <option value="will">Will</option>
-            <option value="bravery">Bravery</option>
-            <option value="mana">Mana</option>
-            <option value="luck">Luck</option>
-            <option value="stealth">Stealth</option>
-            <option value="size">Size</option>
-          </select>
-          <input type="number" class="modifier-value" placeholder="+2">
-          <button class="add-modifier"><i class="fas fa-plus"></i> Add</button>
-        </div>
-        <ul id="editor-modifier-list"></ul>
-      </div>
-      <div>
-        <h4><i class="fas fa-layer-group"></i> Extra Sections:</h4>
-        <div class="extra-section-input">
-          <input type="text" id="new-section-name" placeholder="e.g., Human Potential">
-          <button id="add-section"><i class="fas fa-plus"></i> Add Section</button>
-        </div>
-        <div id="section-modifiers-container"></div>
-      </div>
-      <div class="action-buttons">
-        <button id="save-race"><i class="fas fa-save"></i> Save Race</button>
-        <button id="delete-race"><i class="fas fa-trash"></i> Delete Race</button>
-        <button id="reset-editor"><i class="fas fa-undo"></i> Reset Editor</button>
-      </div>
+  <!-- modal shell -->
+  <div class="modal-back" id="modalBack">
+    <div class="modal" role="dialog">
+      <h3 id="modalTitle">Modal</h3>
+      <div class="modal-body" id="modalBody"></div>
+      <div style="text-align:right;margin-top:8px"><button class="btn" id="closeModal">Close</button></div>
     </div>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    // Basic state and helpers
+    const state = {
+      name:'', avatar:'', hpCurrent:10, hpMax:10, manaCurrent:5, manaMax:5,
+      inventory:[], spells:[], mods:[], status:[], armors:['','',''], armorMods:['','',''], weapons:[{name:'',mod:''},{name:'',mod:''}], weaponSlots:2
+    };
+
+    // DOM refs
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarImg = document.getElementById('avatarImg');
+    const playerName = document.getElementById('playerName');
+    const hpCurrent = document.getElementById('hpCurrent');
+    const hpMax = document.getElementById('hpMax');
+    const manaCurrent = document.getElementById('manaCurrent');
+    const manaMax = document.getElementById('manaMax');
+
+    // load/save to localStorage by default key "dnd_player_default"
+    const DEFAULT_KEY = 'dnd_player_default';
+
+    // wire image upload
+    document.querySelector('.upload-btn').addEventListener('click', ()=> avatarInput.click());
+    avatarInput.addEventListener('change', async (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const data = await fileToDataUrl(file);
+      state.avatar = data;
+      avatarImg.src = data;
+      save();
+    });
+
+    playerName.addEventListener('input', (e)=>{state.name = e.target.value; save();});
+
+    // HP / Mana controls
+    document.querySelectorAll('[data-act]').forEach(btn=>{
+      btn.addEventListener('click',(e)=>{
+        const act = btn.dataset.act;
+        if(act.startsWith('hp')) handleHP(act);
+        if(act.startsWith('mana')) handleMana(act);
+      })
+    })
+
+    function handleHP(act){
+      if(act==='hp-plus') state.hpCurrent = Math.min(state.hpMax, state.hpCurrent+1);
+      if(act==='hp-minus') state.hpCurrent = Math.max(0, state.hpCurrent-1);
+      if(act==='hp-heal') state.hpCurrent = state.hpMax;
+      renderStats(); save();
+    }
+    function handleMana(act){
+      if(act==='mana-plus') state.manaCurrent = Math.min(state.manaMax, state.manaCurrent+1);
+      if(act==='mana-minus') state.manaCurrent = Math.max(0, state.manaCurrent-1);
+      if(act==='mana-rest') state.manaCurrent = state.manaMax;
+      renderStats(); save();
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      showPage(t.dataset.tab);
+    }));
+    document.getElementById('openInventory').addEventListener('click', ()=>document.querySelector('[data-tab="inventory"]').click());
+    document.getElementById('openSpells').addEventListener('click', ()=>document.querySelector('[data-tab="spells"]').click());
+    document.getElementById('openMods').addEventListener('click', ()=>document.querySelector('[data-tab="mods"]').click());
+
+    function showPage(name){
+      document.querySelectorAll('.panel-page').forEach(p=>p.style.display = (p.dataset.page===name)?'block':'none');
+    }
+
+    // Inventory
+    const invList = document.getElementById('invList');
+    document.getElementById('addItem').addEventListener('click', ()=>{
+      const text = document.getElementById('invInput').value.trim(); if(!text) return;
+      state.inventory.push({text}); document.getElementById('invInput').value=''; renderInventory(); save();
+    });
+
+    function renderInventory(){
+      invList.innerHTML = '';
+      state.inventory.forEach((it,i)=>{
+        const el = document.createElement('div'); el.className='item';
+        el.innerHTML = `<div>${it.text}</div><div><button class='btn' data-i='${i}'>Remove</button></div>`;
+        el.querySelector('button').addEventListener('click',()=>{state.inventory.splice(i,1);renderInventory();save();});
+        invList.appendChild(el);
+      })
+    }
+
+    // Spells
+    const spellList = document.getElementById('spellList');
+    document.getElementById('addSpell').addEventListener('click', ()=>{
+      const name = document.getElementById('spellName').value.trim(); const cost = document.getElementById('spellCost').value.trim(); if(!name) return;
+      state.spells.push({name,cost}); document.getElementById('spellName').value=''; document.getElementById('spellCost').value=''; renderSpells(); save();
+    });
+    function renderSpells(){ spellList.innerHTML=''; state.spells.forEach((s,i)=>{
+      const el=document.createElement('div'); el.className='item'; el.innerHTML=`<div><strong>${s.name}</strong><div class='small muted'>${s.cost||''}</div></div><div><button class='btn' data-i='${i}'>Remove</button></div>`;
+      el.querySelector('button').addEventListener('click',()=>{state.spells.splice(i,1);renderSpells();save();}); spellList.appendChild(el);
+    })}
+
+    // Modifiers
+    const modList = document.getElementById('modList');
+    document.getElementById('addMod').addEventListener('click', ()=>{
+      const name = document.getElementById('modName').value.trim(); if(!name) return; state.mods.push({name}); document.getElementById('modName').value=''; renderMods(); save();
+    });
+    function renderMods(){modList.innerHTML=''; state.mods.forEach((m,i)=>{const el=document.createElement('div');el.className='item';el.innerHTML=`<div>${m.name}</div><div><button class='btn' data-i='${i}'>Remove</button></div>`; el.querySelector('button').addEventListener('click',()=>{state.mods.splice(i,1);renderMods();save();}); modList.appendChild(el);})}
+
+    // Status effects
+    const statusList = document.getElementById('statusList');
+    document.getElementById('addStatus').addEventListener('click', ()=>{
+      const name=document.getElementById('statusName').value.trim(); const turns=document.getElementById('statusTurns').value.trim(); if(!name) return; state.status.push({name,turns}); document.getElementById('statusName').value=''; document.getElementById('statusTurns').value=''; renderStatuses(); save();
+    });
+    function renderStatuses(){statusList.innerHTML=''; state.status.forEach((s,i)=>{const el=document.createElement('div');el.className='item';el.innerHTML=`<div>${s.name} <div class='small muted'>${s.turns?('Turns: '+s.turns):''}</div></div><div><button class='btn' data-i='${i}'>Remove</button></div>`; el.querySelector('button').addEventListener('click',()=>{state.status.splice(i,1);renderStatuses();save();}); statusList.appendChild(el);})}
+
+    // Weapons slots dynamic
+    const weaponsContainer = document.getElementById('weaponsContainer');
+    document.getElementById('addWeaponSlot').addEventListener('click', ()=>{state.weapons.push({name:'',mod:''}); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); save();});
+    document.getElementById('removeWeaponSlot').addEventListener('click', ()=>{if(state.weapons.length>1){state.weapons.pop(); state.weaponSlots = state.weapons.length; renderWeaponsSlots(); save();}});
+
+    function renderWeaponsSlots(){ weaponsContainer.innerHTML=''; state.weapons.forEach((w,i)=>{
+      const wrap = document.createElement('div'); wrap.className='slot'; wrap.style.marginBottom='8px'; wrap.innerHTML = `<div class='small muted'>Slot ${i+1}</div><input data-wi='${i}' placeholder='Name' value='${escapeHtml(w.name)}' /><input data-wm='${i}' placeholder='Damage / Bonus' value='${escapeHtml(w.mod)}' />`;
+      wrap.querySelector(`[data-wi='${i}']`).addEventListener('input', e=>{state.weapons[i].name = e.target.value; save();});
+      wrap.querySelector(`[data-wm='${i}']`).addEventListener('input', e=>{state.weapons[i].mod = e.target.value; save();});
+      weaponsContainer.appendChild(wrap);
+    })}
+
+    // armor inputs wiring
+    document.querySelectorAll('[data-slot="armor"]').forEach(inp=>inp.addEventListener('input', e=>{const i=+e.target.dataset.index; state.armors[i]=e.target.value; save();}));
+    document.querySelectorAll('[data-slot="armor-mod"]').forEach(inp=>inp.addEventListener('input', e=>{const i=+e.target.dataset.index; state.armorMods[i]=e.target.value; save();}));
+
+    // weapon default wiring for main/side
+    document.querySelectorAll('[data-slot="weapon"]').forEach(inp=>inp.addEventListener('input', e=>{const i=+e.target.dataset.index; ensureWeaponIndex(i); state.weapons[i].name=e.target.value; save();}));
+    document.querySelectorAll('[data-slot="weapon-mod"]').forEach(inp=>inp.addEventListener('input', e=>{const i=+e.target.dataset.index; ensureWeaponIndex(i); state.weapons[i].mod=e.target.value; save();}));
+
+    function ensureWeaponIndex(i){ while(state.weapons.length<=i) state.weapons.push({name:'',mod:''}); }
+
+    // Save / Load
+    function save(key=DEFAULT_KEY){
+      // sync values from inputs
+      state.hpCurrent = Number(state.hpCurrent);
+      state.hpMax = Number(state.hpMax);
+      const data = JSON.stringify(state);
+      localStorage.setItem(key, data);
+      // also update quick ui
+      renderStats(); renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots(); // sync armor fields
+      document.querySelectorAll('[data-slot="armor"]').forEach(inp=>{const i=+inp.dataset.index; inp.value = state.armors[i]||''});
+      document.querySelectorAll('[data-slot="armor-mod"]').forEach(inp=>{const i=+inp.dataset.index; inp.value = state.armorMods[i]||''});
+    }
+    function load(key=DEFAULT_KEY){
+      const raw = localStorage.getItem(key); if(!raw) return;
+      try{const obj = JSON.parse(raw); Object.assign(state,obj); applyStateToUI();}catch(e){console.warn('load fail',e)}
+    }
+    function applyStateToUI(){ if(state.avatar) avatarImg.src = state.avatar; playerName.value = state.name||''; hpCurrent.textContent = state.hpCurrent; hpMax.textContent = state.hpMax; manaCurrent.textContent = state.manaCurrent; manaMax.textContent = state.manaMax; renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots(); document.querySelectorAll('[data-slot="armor"]').forEach(inp=>{const i=+inp.dataset.index; inp.value = state.armors[i]||''}); document.querySelectorAll('[data-slot="armor-mod"]').forEach(inp=>{const i=+inp.dataset.index; inp.value = state.armorMods[i]||''}); }
+
+    // small helpers
+    function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file);});}
+    function escapeHtml(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+    function renderStats(){ hpCurrent.textContent = state.hpCurrent; hpMax.textContent = state.hpMax; manaCurrent.textContent = state.manaCurrent; manaMax.textContent = state.manaMax; }
+
+    // settings: save slot, export/import
+    document.getElementById('saveNow').addEventListener('click', ()=>{const slot=document.getElementById('saveSlot').value.trim()||'default'; save('dnd_player_'+slot); alert('Saved to slot: '+slot);} );
+    document.getElementById('exportBtn').addEventListener('click', ()=>{ const data = JSON.stringify(state,null,2); const b = new Blob([data],{type:'application/json'}); const url = URL.createObjectURL(b); const a=document.createElement('a'); a.href=url; a.download = (state.name||'character') + '.json'; a.click(); URL.revokeObjectURL(url);} );
+    document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+    document.getElementById('importFile').addEventListener('change', (e)=>{
+      const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ const obj=JSON.parse(r.result); Object.assign(state,obj); applyStateToUI(); save(); alert('Imported'); }catch(err){alert('Invalid JSON file')} }; r.readAsText(f);
+    });
+
+    // auto-load default on start
+    load(DEFAULT_KEY);
+    if(!localStorage.getItem(DEFAULT_KEY)) save(DEFAULT_KEY);
+
+    // small modal usage (not used heavily here but available)
+    const modalBack = document.getElementById('modalBack'); const modalTitle = document.getElementById('modalTitle'); const modalBody = document.getElementById('modalBody');
+    document.getElementById('closeModal').addEventListener('click', ()=>modalBack.style.display='none');
+
+    // initial render
+    renderStats(); renderInventory(); renderSpells(); renderMods(); renderStatuses(); renderWeaponsSlots();
+  </script>
 </body>
 </html>
