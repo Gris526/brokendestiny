@@ -1,0 +1,181 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>YouTube Playlist Selector (OAuth)</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: #121212;
+  color: white;
+  padding: 20px;
+}
+input, button {
+  padding: 8px;
+  margin: 5px 0;
+}
+.video {
+  padding: 6px;
+  border-bottom: 1px solid #333;
+}
+button {
+  background: #1f1f1f;
+  color: white;
+  border: 1px solid #444;
+  cursor: pointer;
+}
+button:hover { background: #333; }
+</style>
+</head>
+
+<body>
+
+<h2>YouTube Playlist Selector (OAuth)</h2>
+
+<button onclick="handleAuth()">Login with Google</button>
+
+<br><br>
+
+<input type="text" id="playlistUrl" placeholder="Paste playlist URL here" size="60">
+<button onclick="loadPlaylist()">Load Playlist</button>
+
+<br>
+<input type="text" id="searchBox" placeholder="Search..." onkeyup="filterVideos()">
+
+<br>
+<button onclick="selectAll()">Select All</button>
+<button onclick="deselectAll()">Deselect All</button>
+<button onclick="exportTXT()">Export TXT</button>
+<button onclick="exportCSV()">Export CSV</button>
+
+<div id="videos"></div>
+
+<script>
+const API_KEY = "AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
+const CLIENT_ID = "487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
+const SCOPES = "https://www.googleapis.com/auth/youtube.readonly";
+
+let tokenClient;
+let accessToken = null;
+
+function gapiLoaded() {
+  gapi.load('client', initializeGapiClient);
+}
+
+async function initializeGapiClient() {
+  await gapi.client.init({
+    apiKey: API_KEY,
+    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+  });
+}
+
+function handleAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      gapi.client.setToken({ access_token: accessToken });
+      alert("Logged in successfully!");
+    },
+  });
+
+  tokenClient.requestAccessToken();
+}
+
+async function loadPlaylist() {
+  const url = document.getElementById("playlistUrl").value;
+  const playlistId = new URL(url).searchParams.get("list");
+
+  if (!playlistId) {
+    alert("Invalid playlist URL");
+    return;
+  }
+
+  document.getElementById("videos").innerHTML = "Loading...";
+
+  let nextPageToken = "";
+  let allItems = [];
+
+  do {
+    const response = await gapi.client.youtube.playlistItems.list({
+      part: "snippet",
+      maxResults: 50,
+      playlistId: playlistId,
+      pageToken: nextPageToken
+    });
+
+    allItems = allItems.concat(response.result.items);
+    nextPageToken = response.result.nextPageToken;
+  } while (nextPageToken);
+
+  renderVideos(allItems);
+}
+
+function renderVideos(items) {
+  const container = document.getElementById("videos");
+  container.innerHTML = "";
+
+  items.forEach(item => {
+    const videoId = item.snippet.resourceId.videoId;
+    const title = item.snippet.title;
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+
+    const div = document.createElement("div");
+    div.className = "video";
+    div.innerHTML = `
+      <input type="checkbox" value="${url}">
+      ${title}
+    `;
+    container.appendChild(div);
+  });
+}
+
+function selectAll() {
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = true);
+}
+
+function deselectAll() {
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
+}
+
+function filterVideos() {
+  const search = document.getElementById("searchBox").value.toLowerCase();
+  document.querySelectorAll(".video").forEach(div => {
+    div.style.display = div.innerText.toLowerCase().includes(search)
+      ? "block" : "none";
+  });
+}
+
+function getSelectedLinks() {
+  return [...document.querySelectorAll("input[type=checkbox]:checked")]
+    .map(cb => cb.value);
+}
+
+function exportTXT() {
+  downloadFile(getSelectedLinks().join("\n"), "selected_links.txt", "text/plain");
+}
+
+function exportCSV() {
+  const csv = "URL\n" + getSelectedLinks().join("\n");
+  downloadFile(csv, "selected_links.csv", "text/csv");
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+gapiLoaded();
+</script>
+
+</body>
+</html>
