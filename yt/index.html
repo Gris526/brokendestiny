@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>YouTube Playlist Selector (OAuth)</title>
+<title>YouTube Playlist Selector</title>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
@@ -15,14 +15,6 @@ background:#121212;
 color:white;
 margin:0;
 padding:20px;
-}
-
-h2{
-margin-bottom:10px;
-}
-
-.controls{
-margin-bottom:15px;
 }
 
 input,button{
@@ -39,32 +31,10 @@ background:#333;
 cursor:pointer;
 }
 
-#progressContainer{
-width:100%;
-height:6px;
-background:#222;
+#status{
 margin-bottom:10px;
-}
-
-#progressBar{
-height:6px;
-width:0%;
-background:#ff0000;
-transition:width .2s;
-}
-
-#console{
-background:black;
-height:120px;
-overflow:auto;
-font-size:12px;
-padding:8px;
-border:1px solid #333;
-margin-bottom:10px;
-}
-
-#videos{
-margin-top:15px;
+font-size:14px;
+color:#aaa;
 }
 
 .videoCard{
@@ -73,7 +43,7 @@ align-items:center;
 gap:12px;
 padding:10px;
 border-bottom:1px solid #2a2a2a;
-transition:background 0.2s;
+cursor:pointer;
 }
 
 .videoCard:hover{
@@ -85,27 +55,36 @@ width:120px;
 border-radius:6px;
 }
 
-.videoInfo{
-flex:1;
-display:flex;
-flex-direction:column;
-}
-
-.title{
-font-size:14px;
+.icon{
+font-size:24px;
+width:30px;
+text-align:center;
 }
 
 .warning{
 color:#ff6b6b;
-font-weight:bold;
 }
 
-.checkbox{
-transform:scale(1.2);
-}
-
-.pagination{
+#console{
+background:black;
+height:120px;
+overflow:auto;
+font-size:12px;
+padding:8px;
+border:1px solid #333;
 margin-top:10px;
+}
+
+#progressBar{
+height:6px;
+width:0%;
+background:red;
+}
+
+#progressContainer{
+height:6px;
+background:#222;
+margin-bottom:10px;
 }
 
 @media(max-width:900px){
@@ -128,22 +107,20 @@ width:100%;
 
 <h2>YouTube Playlist Selector</h2>
 
-<div class="controls">
+<div id="status">Status: Not logged in</div>
 
 <button onclick="handleAuth()">Login with Google</button>
 
 <br>
 
-<input type="text" id="playlistUrl" placeholder="Paste playlist URL" size="60">
+<input id="playlistUrl" placeholder="Paste playlist URL" size="60">
 <button onclick="loadPlaylist()">Load Playlist</button>
 
 <br>
 
-<input type="text" id="searchBox" placeholder="Search videos..." onkeyup="filterVideos()">
+<input id="searchBox" placeholder="Search..." onkeyup="filterVideos()">
 
-<br>
-
-<input type="file" id="importFile" accept=".txt,.csv" onchange="importLinks()">
+<input type="file" id="importFile" onchange="importLinks()">
 
 <br>
 
@@ -151,52 +128,44 @@ width:100%;
 <button onclick="deselectAll()">Deselect All</button>
 
 <button onclick="exportTXT()">Export TXT</button>
-<button onclick="exportCSV()">Export CSV</button>
-
-</div>
 
 <div id="progressContainer">
 <div id="progressBar"></div>
 </div>
 
-<div id="console"></div>
-
 <div id="videos"></div>
 
-<div class="pagination">
-<button onclick="prevPage()">Previous Page</button>
-<button onclick="nextPage()">Next Page</button>
+<div>
+<button onclick="prevPage()">Prev</button>
+<button onclick="nextPage()">Next</button>
 </div>
+
+<div id="console"></div>
 
 <script>
 
-const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic"; 
+const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
 const CLIENT_ID="487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/youtube.readonly";
 
+
 let tokenClient;
 let accessToken=null;
-
-let importedLinks=new Set();
 
 let allItems=[];
 let currentPage=0;
 const PAGE_SIZE=100;
 
+let selectedVideos=new Set();
+
 function log(msg){
-
 const c=document.getElementById("console");
-
 c.innerHTML+=msg+"<br>";
-
 c.scrollTop=c.scrollHeight;
-
 }
 
 function setProgress(p){
-
 document.getElementById("progressBar").style.width=p+"%";
-
 }
 
 function gapiLoaded(){
@@ -210,7 +179,7 @@ apiKey:API_KEY,
 discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
 });
 
-log("YouTube API loaded");
+log("API loaded");
 
 }
 
@@ -229,6 +198,8 @@ gapi.client.setToken({
 access_token:accessToken
 });
 
+document.getElementById("status").innerText="Status: Logged in";
+
 log("Login successful");
 
 }
@@ -242,7 +213,6 @@ tokenClient.requestAccessToken();
 async function loadPlaylist(){
 
 const url=document.getElementById("playlistUrl").value;
-
 const playlistId=new URL(url).searchParams.get("list");
 
 if(!playlistId){
@@ -250,14 +220,13 @@ alert("Invalid playlist URL");
 return;
 }
 
-document.getElementById("videos").innerHTML="Loading playlist...";
-
-log("Loading playlist...");
+allItems=[];
+currentPage=0;
 
 let nextPageToken="";
-allItems=[];
-
 let pages=0;
+
+log("Loading playlist");
 
 do{
 
@@ -282,20 +251,15 @@ log("Loaded "+allItems.length+" videos");
 
 }while(nextPageToken);
 
-currentPage=0;
-
-renderPage();
-
 setProgress(100);
 
-log("Playlist fully loaded");
+renderPage();
 
 }
 
 function renderPage(){
 
 const start=currentPage*PAGE_SIZE;
-
 const end=start+PAGE_SIZE;
 
 renderVideos(allItems.slice(start,end));
@@ -305,49 +269,71 @@ renderVideos(allItems.slice(start,end));
 function renderVideos(items){
 
 const container=document.getElementById("videos");
-
 container.innerHTML="";
 
 items.forEach(item=>{
 
 const videoId=item.snippet.resourceId.videoId;
-
 const title=item.snippet.title;
-
 const thumb=item.snippet.thumbnails.medium.url;
 
 const url=`https://www.youtube.com/watch?v=${videoId}`;
 
-let warning=false;
+let warning=(title==="Deleted video"||title==="Private video");
 
-if(title==="Deleted video"||title==="Private video"){
-warning=true;
-}
+let selected=selectedVideos.has(url);
+
+let icon="❌";
+
+if(selected) icon="✅";
+
+if(warning && !selected) icon="⚠️❌";
+if(warning && selected) icon="⚠️✅";
 
 const div=document.createElement("div");
-
 div.className="videoCard";
+
+div.onclick=()=>toggleVideo(url,warning,div);
 
 div.innerHTML=`
 
-<input class="checkbox" type="checkbox" value="${url}">
+<div class="icon">${icon}</div>
 
 <img src="${thumb}">
 
-<div class="videoInfo">
+<div>${title}</div>
 
-<span class="title ${warning?"warning":""}">
-${warning?"⚠ ":""}${title}
-</span>
-
-</div>
 `;
 
 container.appendChild(div);
 
 });
 
-applyImportedSelection();
+}
+
+function toggleVideo(url,warning,card){
+
+if(selectedVideos.has(url))
+selectedVideos.delete(url);
+else
+selectedVideos.add(url);
+
+updateCardIcon(url,warning,card);
+
+}
+
+function updateCardIcon(url,warning,card){
+
+let selected=selectedVideos.has(url);
+
+let icon="❌";
+
+if(selected) icon="✅";
+
+if(warning && !selected) icon="⚠️❌";
+if(warning && selected) icon="⚠️✅";
+
+card.querySelector(".icon").innerText=icon;
 
 }
 
@@ -356,9 +342,7 @@ function nextPage(){
 if((currentPage+1)*PAGE_SIZE>=allItems.length)return;
 
 currentPage++;
-
 renderPage();
-
 window.scrollTo(0,0);
 
 }
@@ -368,24 +352,30 @@ function prevPage(){
 if(currentPage===0)return;
 
 currentPage--;
-
 renderPage();
-
 window.scrollTo(0,0);
 
 }
 
 function selectAll(){
 
-document.querySelectorAll(".checkbox")
-.forEach(cb=>cb.checked=true);
+allItems.forEach(item=>{
+
+const id=item.snippet.resourceId.videoId;
+
+selectedVideos.add("https://www.youtube.com/watch?v="+id);
+
+});
+
+renderPage();
 
 }
 
 function deselectAll(){
 
-document.querySelectorAll(".checkbox")
-.forEach(cb=>cb.checked=false);
+selectedVideos.clear();
+
+renderPage();
 
 }
 
@@ -400,11 +390,7 @@ document.querySelectorAll(".videoCard")
 .forEach(card=>{
 
 card.style.display=
-
-card.innerText
-.toLowerCase()
-.includes(search)
-
+card.innerText.toLowerCase().includes(search)
 ?"flex"
 :"none";
 
@@ -412,44 +398,17 @@ card.innerText
 
 }
 
-function getSelectedLinks(){
-
-return [...document.querySelectorAll(".checkbox:checked")]
-.map(cb=>cb.value);
-
-}
-
 function exportTXT(){
 
-downloadFile(
-getSelectedLinks().join("\n"),
-"selected_links.txt",
-"text/plain"
-);
+const content=[...selectedVideos].join("\n");
 
-}
-
-function exportCSV(){
-
-const csv="URL\n"+getSelectedLinks().join("\n");
-
-downloadFile(
-csv,
-"selected_links.csv",
-"text/csv"
-);
-
-}
-
-function downloadFile(content,filename,type){
-
-const blob=new Blob([content],{type});
+const blob=new Blob([content],{type:"text/plain"});
 
 const a=document.createElement("a");
 
 a.href=URL.createObjectURL(blob);
 
-a.download=filename;
+a.download="selected_links.txt";
 
 a.click();
 
@@ -457,9 +416,7 @@ a.click();
 
 function importLinks(){
 
-const file=document
-.getElementById("importFile")
-.files[0];
+const file=document.getElementById("importFile").files[0];
 
 if(!file)return;
 
@@ -472,28 +429,17 @@ const lines=e.target.result
 .map(x=>x.trim())
 .filter(x=>x);
 
-importedLinks=new Set(lines);
+lines.forEach(l=>selectedVideos.add(l));
 
 log("Imported "+lines.length+" links");
 
-applyImportedSelection();
+document.getElementById("importFile").value="";
+
+renderPage();
 
 };
 
 reader.readAsText(file);
-
-}
-
-function applyImportedSelection(){
-
-document.querySelectorAll(".checkbox")
-.forEach(cb=>{
-
-if(importedLinks.has(cb.value)){
-cb.checked=true;
-}
-
-});
 
 }
 
