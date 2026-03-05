@@ -1,180 +1,374 @@
-
-
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>YouTube Playlist Selector (OAuth)</title>
+
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 
 <style>
-body {
-  font-family: Arial;
-  background: #121212;
-  color: white;
-  padding: 20px;
+
+body{
+font-family:Arial;
+background:#121212;
+color:white;
+padding:20px;
 }
-input, button {
-  padding: 8px;
-  margin: 5px 0;
+
+h2{
+margin-bottom:10px;
 }
-.video {
-  padding: 6px;
-  border-bottom: 1px solid #333;
+
+.controls{
+margin-bottom:15px;
 }
-button {
-  background: #1f1f1f;
-  color: white;
-  border: 1px solid #444;
-  cursor: pointer;
+
+input,button{
+padding:8px;
+margin:4px;
+border-radius:6px;
+border:1px solid #444;
+background:#1f1f1f;
+color:white;
 }
-button:hover { background: #333; }
+
+button:hover{
+background:#333;
+}
+
+#videos{
+margin-top:15px;
+}
+
+.videoCard{
+display:flex;
+align-items:center;
+gap:12px;
+padding:10px;
+border-bottom:1px solid #2a2a2a;
+transition:background 0.2s;
+}
+
+.videoCard:hover{
+background:#1a1a1a;
+}
+
+.videoCard img{
+width:120px;
+border-radius:6px;
+}
+
+.videoInfo{
+flex:1;
+display:flex;
+flex-direction:column;
+}
+
+.title{
+font-size:14px;
+}
+
+.warning{
+color:#ff6b6b;
+font-weight:bold;
+}
+
+.checkbox{
+transform:scale(1.2);
+}
+
 </style>
 </head>
 
 <body>
 
-<h2>YouTube Playlist Selector (OAuth)</h2>
+<h2>YouTube Playlist Selector</h2>
+
+<div class="controls">
 
 <button onclick="handleAuth()">Login with Google</button>
 
-<br><br>
+<br>
 
-<input type="text" id="playlistUrl" placeholder="Paste playlist URL here" size="60">
+<input type="text" id="playlistUrl" placeholder="Paste playlist URL" size="60">
 <button onclick="loadPlaylist()">Load Playlist</button>
 
 <br>
-<input type="text" id="searchBox" placeholder="Search..." onkeyup="filterVideos()">
+
+<input type="text" id="searchBox" placeholder="Search videos..." onkeyup="filterVideos()">
 
 <br>
+
+<input type="file" id="importFile" accept=".txt,.csv" onchange="importLinks()">
+
+<br>
+
 <button onclick="selectAll()">Select All</button>
 <button onclick="deselectAll()">Deselect All</button>
+
 <button onclick="exportTXT()">Export TXT</button>
 <button onclick="exportCSV()">Export CSV</button>
+
+</div>
 
 <div id="videos"></div>
 
 <script>
-const API_KEY = "AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
-const CLIENT_ID = "487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
-const SCOPES = "https://www.googleapis.com/auth/youtube.readonly";
+
+const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
+const CLIENT_ID="487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
+const SCOPES="https://www.googleapis.com/auth/youtube.readonly";
 
 let tokenClient;
-let accessToken = null;
+let accessToken=null;
 
-function gapiLoaded() {
-  gapi.load('client', initializeGapiClient);
+let importedLinks=new Set();
+
+function gapiLoaded(){
+gapi.load('client',initializeGapiClient);
 }
 
-async function initializeGapiClient() {
-  await gapi.client.init({
-    apiKey: API_KEY,
-    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
-  });
+async function initializeGapiClient(){
+
+await gapi.client.init({
+apiKey:API_KEY,
+discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+});
+
 }
 
-function handleAuth() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (tokenResponse) => {
-      accessToken = tokenResponse.access_token;
-      gapi.client.setToken({ access_token: accessToken });
-      alert("Logged in successfully!");
-    },
-  });
+function handleAuth(){
 
-  tokenClient.requestAccessToken();
+tokenClient=google.accounts.oauth2.initTokenClient({
+
+client_id:CLIENT_ID,
+scope:SCOPES,
+
+callback:(tokenResponse)=>{
+
+accessToken=tokenResponse.access_token;
+
+gapi.client.setToken({
+access_token:accessToken
+});
+
+alert("Login successful");
+
 }
 
-async function loadPlaylist() {
-  const url = document.getElementById("playlistUrl").value;
-  const playlistId = new URL(url).searchParams.get("list");
+});
 
-  if (!playlistId) {
-    alert("Invalid playlist URL");
-    return;
-  }
+tokenClient.requestAccessToken();
 
-  document.getElementById("videos").innerHTML = "Loading...";
-
-  let nextPageToken = "";
-  let allItems = [];
-
-  do {
-    const response = await gapi.client.youtube.playlistItems.list({
-      part: "snippet",
-      maxResults: 50,
-      playlistId: playlistId,
-      pageToken: nextPageToken
-    });
-
-    allItems = allItems.concat(response.result.items);
-    nextPageToken = response.result.nextPageToken;
-  } while (nextPageToken);
-
-  renderVideos(allItems);
 }
 
-function renderVideos(items) {
-  const container = document.getElementById("videos");
-  container.innerHTML = "";
+async function loadPlaylist(){
 
-  items.forEach(item => {
-    const videoId = item.snippet.resourceId.videoId;
-    const title = item.snippet.title;
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
+const url=document.getElementById("playlistUrl").value;
+const playlistId=new URL(url).searchParams.get("list");
 
-    const div = document.createElement("div");
-    div.className = "video";
-    div.innerHTML = `
-      <input type="checkbox" value="${url}">
-      ${title}
-    `;
-    container.appendChild(div);
-  });
+if(!playlistId){
+alert("Invalid playlist URL");
+return;
 }
 
-function selectAll() {
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = true);
+document.getElementById("videos").innerHTML="Loading playlist...";
+
+let nextPageToken="";
+let allItems=[];
+
+do{
+
+const response=await gapi.client.youtube.playlistItems.list({
+
+part:"snippet",
+maxResults:50,
+playlistId:playlistId,
+pageToken:nextPageToken
+
+});
+
+allItems=allItems.concat(response.result.items);
+
+nextPageToken=response.result.nextPageToken;
+
+}while(nextPageToken);
+
+renderVideos(allItems);
+
 }
 
-function deselectAll() {
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => cb.checked = false);
+function renderVideos(items){
+
+const container=document.getElementById("videos");
+container.innerHTML="";
+
+items.forEach(item=>{
+
+const videoId=item.snippet.resourceId.videoId;
+const title=item.snippet.title;
+const thumb=item.snippet.thumbnails.medium.url;
+
+const url=`https://www.youtube.com/watch?v=${videoId}`;
+
+let warning=false;
+
+if(title==="Deleted video"||title==="Private video"){
+warning=true;
 }
 
-function filterVideos() {
-  const search = document.getElementById("searchBox").value.toLowerCase();
-  document.querySelectorAll(".video").forEach(div => {
-    div.style.display = div.innerText.toLowerCase().includes(search)
-      ? "block" : "none";
-  });
+const div=document.createElement("div");
+div.className="videoCard";
+
+div.innerHTML=`
+
+<input class="checkbox" type="checkbox" value="${url}">
+
+<img src="${thumb}">
+
+<div class="videoInfo">
+
+<span class="title ${warning?"warning":""}">
+
+${warning?"⚠️ ":""}${title}
+
+</span>
+
+</div>
+
+`;
+
+container.appendChild(div);
+
+});
+
+applyImportedSelection();
+
 }
 
-function getSelectedLinks() {
-  return [...document.querySelectorAll("input[type=checkbox]:checked")]
-    .map(cb => cb.value);
+function selectAll(){
+
+document.querySelectorAll(".checkbox")
+.forEach(cb=>cb.checked=true);
+
 }
 
-function exportTXT() {
-  downloadFile(getSelectedLinks().join("\n"), "selected_links.txt", "text/plain");
+function deselectAll(){
+
+document.querySelectorAll(".checkbox")
+.forEach(cb=>cb.checked=false);
+
 }
 
-function exportCSV() {
-  const csv = "URL\n" + getSelectedLinks().join("\n");
-  downloadFile(csv, "selected_links.csv", "text/csv");
+function filterVideos(){
+
+const search=document
+.getElementById("searchBox")
+.value
+.toLowerCase();
+
+document.querySelectorAll(".videoCard")
+.forEach(card=>{
+
+card.style.display=
+
+card.innerText
+.toLowerCase()
+.includes(search)
+
+?"flex"
+:"none";
+
+});
+
 }
 
-function downloadFile(content, filename, type) {
-  const blob = new Blob([content], { type });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
+function getSelectedLinks(){
+
+return [...document.querySelectorAll(".checkbox:checked")]
+.map(cb=>cb.value);
+
+}
+
+function exportTXT(){
+
+downloadFile(
+getSelectedLinks().join("\n"),
+"selected_links.txt",
+"text/plain"
+);
+
+}
+
+function exportCSV(){
+
+const csv="URL\n"+getSelectedLinks().join("\n");
+
+downloadFile(
+csv,
+"selected_links.csv",
+"text/csv"
+);
+
+}
+
+function downloadFile(content,filename,type){
+
+const blob=new Blob([content],{type});
+
+const a=document.createElement("a");
+
+a.href=URL.createObjectURL(blob);
+
+a.download=filename;
+
+a.click();
+
+}
+
+function importLinks(){
+
+const file=document
+.getElementById("importFile")
+.files[0];
+
+if(!file)return;
+
+const reader=new FileReader();
+
+reader.onload=function(e){
+
+const lines=e.target.result
+.split("\n")
+.map(x=>x.trim())
+.filter(x=>x);
+
+importedLinks=new Set(lines);
+
+applyImportedSelection();
+
+};
+
+reader.readAsText(file);
+
+}
+
+function applyImportedSelection(){
+
+document.querySelectorAll(".checkbox")
+.forEach(cb=>{
+
+if(importedLinks.has(cb.value)){
+cb.checked=true;
+}
+
+});
+
 }
 
 gapiLoaded();
+
 </script>
 
 </body>
