@@ -13,6 +13,7 @@ body{
 font-family:Arial;
 background:#121212;
 color:white;
+margin:0;
 padding:20px;
 }
 
@@ -35,6 +36,31 @@ color:white;
 
 button:hover{
 background:#333;
+cursor:pointer;
+}
+
+#progressContainer{
+width:100%;
+height:6px;
+background:#222;
+margin-bottom:10px;
+}
+
+#progressBar{
+height:6px;
+width:0%;
+background:#ff0000;
+transition:width .2s;
+}
+
+#console{
+background:black;
+height:120px;
+overflow:auto;
+font-size:12px;
+padding:8px;
+border:1px solid #333;
+margin-bottom:10px;
 }
 
 #videos{
@@ -78,6 +104,23 @@ font-weight:bold;
 transform:scale(1.2);
 }
 
+.pagination{
+margin-top:10px;
+}
+
+@media(max-width:900px){
+
+.videoCard{
+flex-direction:column;
+align-items:flex-start;
+}
+
+.videoCard img{
+width:100%;
+}
+
+}
+
 </style>
 </head>
 
@@ -112,11 +155,22 @@ transform:scale(1.2);
 
 </div>
 
+<div id="progressContainer">
+<div id="progressBar"></div>
+</div>
+
+<div id="console"></div>
+
 <div id="videos"></div>
+
+<div class="pagination">
+<button onclick="prevPage()">Previous Page</button>
+<button onclick="nextPage()">Next Page</button>
+</div>
 
 <script>
 
-const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
+const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic"; 
 const CLIENT_ID="487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/youtube.readonly";
 
@@ -124,6 +178,26 @@ let tokenClient;
 let accessToken=null;
 
 let importedLinks=new Set();
+
+let allItems=[];
+let currentPage=0;
+const PAGE_SIZE=100;
+
+function log(msg){
+
+const c=document.getElementById("console");
+
+c.innerHTML+=msg+"<br>";
+
+c.scrollTop=c.scrollHeight;
+
+}
+
+function setProgress(p){
+
+document.getElementById("progressBar").style.width=p+"%";
+
+}
 
 function gapiLoaded(){
 gapi.load('client',initializeGapiClient);
@@ -135,6 +209,8 @@ await gapi.client.init({
 apiKey:API_KEY,
 discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
 });
+
+log("YouTube API loaded");
 
 }
 
@@ -153,7 +229,7 @@ gapi.client.setToken({
 access_token:accessToken
 });
 
-alert("Login successful");
+log("Login successful");
 
 }
 
@@ -166,6 +242,7 @@ tokenClient.requestAccessToken();
 async function loadPlaylist(){
 
 const url=document.getElementById("playlistUrl").value;
+
 const playlistId=new URL(url).searchParams.get("list");
 
 if(!playlistId){
@@ -175,8 +252,12 @@ return;
 
 document.getElementById("videos").innerHTML="Loading playlist...";
 
+log("Loading playlist...");
+
 let nextPageToken="";
-let allItems=[];
+allItems=[];
+
+let pages=0;
 
 do{
 
@@ -193,21 +274,46 @@ allItems=allItems.concat(response.result.items);
 
 nextPageToken=response.result.nextPageToken;
 
+pages++;
+
+setProgress(Math.min(100,pages*10));
+
+log("Loaded "+allItems.length+" videos");
+
 }while(nextPageToken);
 
-renderVideos(allItems);
+currentPage=0;
+
+renderPage();
+
+setProgress(100);
+
+log("Playlist fully loaded");
+
+}
+
+function renderPage(){
+
+const start=currentPage*PAGE_SIZE;
+
+const end=start+PAGE_SIZE;
+
+renderVideos(allItems.slice(start,end));
 
 }
 
 function renderVideos(items){
 
 const container=document.getElementById("videos");
+
 container.innerHTML="";
 
 items.forEach(item=>{
 
 const videoId=item.snippet.resourceId.videoId;
+
 const title=item.snippet.title;
+
 const thumb=item.snippet.thumbnails.medium.url;
 
 const url=`https://www.youtube.com/watch?v=${videoId}`;
@@ -219,6 +325,7 @@ warning=true;
 }
 
 const div=document.createElement("div");
+
 div.className="videoCard";
 
 div.innerHTML=`
@@ -230,13 +337,10 @@ div.innerHTML=`
 <div class="videoInfo">
 
 <span class="title ${warning?"warning":""}">
-
-${warning?"⚠️ ":""}${title}
-
+${warning?"⚠ ":""}${title}
 </span>
 
 </div>
-
 `;
 
 container.appendChild(div);
@@ -244,6 +348,30 @@ container.appendChild(div);
 });
 
 applyImportedSelection();
+
+}
+
+function nextPage(){
+
+if((currentPage+1)*PAGE_SIZE>=allItems.length)return;
+
+currentPage++;
+
+renderPage();
+
+window.scrollTo(0,0);
+
+}
+
+function prevPage(){
+
+if(currentPage===0)return;
+
+currentPage--;
+
+renderPage();
+
+window.scrollTo(0,0);
 
 }
 
@@ -345,6 +473,8 @@ const lines=e.target.result
 .filter(x=>x);
 
 importedLinks=new Set(lines);
+
+log("Imported "+lines.length+" links");
 
 applyImportedSelection();
 
