@@ -236,10 +236,16 @@ function deselectAll(){
 
 // ---- SEARCH ----
 function filterVideos(){
-  const search=document.getElementById("searchBox").value.toLowerCase();
-  document.querySelectorAll(".videoCard").forEach(card=>{
-    card.style.display = card.innerText.toLowerCase().includes(search)?"flex":"none";
+  const search = document.getElementById("searchBox").value.toLowerCase();
+
+  // Filter all loaded videos
+  const filtered = allItems.filter(item => {
+    const title = item.snippet.title.toLowerCase();
+    return title.includes(search);
   });
+
+  // Render only the filtered results
+  renderVideos(filtered);
 }
 
 // ---- EXPORT / IMPORT ----
