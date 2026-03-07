@@ -8,98 +8,19 @@
 <script src="https://apis.google.com/js/api.js"></script>
 
 <style>
-
-body{
-font-family:Arial;
-background:#121212;
-color:white;
-margin:0;
-padding:20px;
-}
-
-input,button{
-padding:8px;
-margin:4px;
-border-radius:6px;
-border:1px solid #444;
-background:#1f1f1f;
-color:white;
-}
-
-button:hover{
-background:#333;
-cursor:pointer;
-}
-
-#status{
-margin-bottom:10px;
-font-size:14px;
-color:#aaa;
-}
-
-.videoCard{
-display:flex;
-align-items:center;
-gap:12px;
-padding:10px;
-border-bottom:1px solid #2a2a2a;
-cursor:pointer;
-}
-
-.videoCard:hover{
-background:#1a1a1a;
-}
-
-.videoCard img{
-width:120px;
-border-radius:6px;
-}
-
-.icon{
-font-size:24px;
-width:30px;
-text-align:center;
-}
-
-.warning{
-color:#ff6b6b;
-}
-
-#console{
-background:black;
-height:120px;
-overflow:auto;
-font-size:12px;
-padding:8px;
-border:1px solid #333;
-margin-top:10px;
-}
-
-#progressBar{
-height:6px;
-width:0%;
-background:red;
-}
-
-#progressContainer{
-height:6px;
-background:#222;
-margin-bottom:10px;
-}
-
-@media(max-width:900px){
-
-.videoCard{
-flex-direction:column;
-align-items:flex-start;
-}
-
-.videoCard img{
-width:100%;
-}
-
-}
-
+body{font-family:Arial;background:#121212;color:white;margin:0;padding:20px;}
+input,button{padding:8px;margin:4px;border-radius:6px;border:1px solid #444;background:#1f1f1f;color:white;}
+button:hover{background:#333;cursor:pointer;}
+#status{margin-bottom:10px;font-size:14px;color:#aaa;}
+.videoCard{display:flex;align-items:center;gap:12px;padding:10px;border-bottom:1px solid #2a2a2a;cursor:pointer;}
+.videoCard:hover{background:#1a1a1a;}
+.videoCard img{width:120px;border-radius:6px;}
+.icon{font-size:24px;width:30px;text-align:center;}
+.warning{color:#ff6b6b;}
+#console{background:black;height:120px;overflow:auto;font-size:12px;padding:8px;border:1px solid #333;margin-top:10px;}
+#progressBar{height:6px;width:0%;background:red;}
+#progressContainer{height:6px;background:#222;margin-bottom:10px;}
+@media(max-width:900px){.videoCard{flex-direction:column;align-items:flex-start;}.videoCard img{width:100%;}}
 </style>
 </head>
 
@@ -108,344 +29,243 @@ width:100%;
 <h2>YouTube Playlist Selector</h2>
 
 <div id="status">Status: Not logged in</div>
-
 <button onclick="handleAuth()">Login with Google</button>
-
 <br>
-
 <input id="playlistUrl" placeholder="Paste playlist URL" size="60">
 <button onclick="loadPlaylist()">Load Playlist</button>
-
 <br>
-
 <input id="searchBox" placeholder="Search..." onkeyup="filterVideos()">
-
 <input type="file" id="importFile" onchange="importLinks()">
-
 <br>
-
 <button onclick="selectAll()">Select All</button>
 <button onclick="deselectAll()">Deselect All</button>
-
 <button onclick="exportTXT()">Export TXT</button>
-
-<div id="progressContainer">
-<div id="progressBar"></div>
-</div>
-
+<div id="progressContainer"><div id="progressBar"></div></div>
 <div id="videos"></div>
-
 <div>
 <button onclick="prevPage()">Prev</button>
 <button onclick="nextPage()">Next</button>
 </div>
-
 <div id="console"></div>
 
 <script>
-
 const API_KEY="AIzaSyCkR4_srKtxdJlmSlcGqYWTu7-TYIal3ic";
 const CLIENT_ID="487238591013-0gbmtah07pfmf9fu6tsumd61bjgt2dca.apps.googleusercontent.com";
 const SCOPES="https://www.googleapis.com/auth/youtube.readonly";
 
-
 let tokenClient;
-let accessToken=null;
+let accessToken = null;
 
-let allItems=[];
-let currentPage=0;
-const PAGE_SIZE=100;
+let allItems = [];
+let currentPage = 0;
+const PAGE_SIZE = 100;
+const INITIAL_LOAD = 10000; // Max initial load
+let selectedVideos = new Set();
+let nextPageToken = "";
+let totalVideos = 0;
 
-let selectedVideos=new Set();
-
+// ---- UTILS ----
 function log(msg){
-const c=document.getElementById("console");
-c.innerHTML+=msg+"<br>";
-c.scrollTop=c.scrollHeight;
+  const c = document.getElementById("console");
+  c.innerHTML += msg + "<br>";
+  c.scrollTop = c.scrollHeight;
 }
+function setProgress(p){document.getElementById("progressBar").style.width=p+"%";}
 
-function setProgress(p){
-document.getElementById("progressBar").style.width=p+"%";
-}
-
-function gapiLoaded(){
-gapi.load('client',initializeGapiClient);
-}
+// ---- GOOGLE API ----
+function gapiLoaded(){ gapi.load('client', initializeGapiClient); }
 
 async function initializeGapiClient(){
-
-await gapi.client.init({
-apiKey:API_KEY,
-discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
-});
-
-log("API loaded");
-
+  await gapi.client.init({
+    apiKey: API_KEY,
+    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+  });
+  log("API loaded");
 }
 
+// OAuth login for private playlists
 function handleAuth(){
-
-tokenClient=google.accounts.oauth2.initTokenClient({
-
-client_id:CLIENT_ID,
-scope:SCOPES,
-
-callback:(tokenResponse)=>{
-
-accessToken=tokenResponse.access_token;
-
-gapi.client.setToken({
-access_token:accessToken
-});
-
-document.getElementById("status").innerText="Status: Logged in";
-
-log("Login successful");
-
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      gapi.client.setToken({ access_token: accessToken });
+      document.getElementById("status").innerText="Status: Logged in";
+      log("Login successful");
+    }
+  });
+  tokenClient.requestAccessToken();
 }
 
-});
-
-tokenClient.requestAccessToken();
-
-}
-
+// ---- PLAYLIST LOADING ----
 async function loadPlaylist(){
+  const url = document.getElementById("playlistUrl").value;
+  const playlistId = new URL(url).searchParams.get("list");
+  if(!playlistId){ alert("Invalid playlist URL"); return; }
 
-const url=document.getElementById("playlistUrl").value;
-const playlistId=new URL(url).searchParams.get("list");
+  allItems = [];
+  currentPage = 0;
+  nextPageToken = "";
+  totalVideos = 0;
 
-if(!playlistId){
-alert("Invalid playlist URL");
-return;
+  log("Loading playlist metadata...");
+
+  // Fetch playlist metadata to get total count
+  const playlistResponse = await gapi.client.youtube.playlists.list({
+    part: "contentDetails",
+    id: playlistId,
+    maxResults: 1,
+    key: accessToken ? undefined : API_KEY
+  });
+  totalVideos = playlistResponse.result.items[0].contentDetails.itemCount;
+  log("Playlist contains " + totalVideos + " videos");
+
+  await loadPlaylistBatch();
 }
 
-allItems=[];
-currentPage=0;
+async function loadPlaylistBatch(){
+  let loadedCount = allItems.length;
+  let batchLimit = Math.min(INITIAL_LOAD + loadedCount, totalVideos);
+  log("Loading videos " + (loadedCount+1) + " to " + batchLimit);
 
-let nextPageToken="";
-let pages=0;
+  while(allItems.length < batchLimit){
+    const response = await gapi.client.youtube.playlistItems.list({
+      part: "snippet",
+      playlistId: new URL(document.getElementById("playlistUrl").value).searchParams.get("list"),
+      maxResults: 50,
+      pageToken: nextPageToken,
+      key: accessToken ? undefined : API_KEY
+    });
 
-log("Loading playlist");
+    allItems = allItems.concat(response.result.items);
+    nextPageToken = response.result.nextPageToken;
+    if(!nextPageToken) break;
+    setProgress(Math.min(100, (allItems.length/totalVideos)*100));
+  }
 
-do{
-
-const response=await gapi.client.youtube.playlistItems.list({
-
-part:"snippet",
-maxResults:50,
-playlistId:playlistId,
-pageToken:nextPageToken
-
-});
-
-allItems=allItems.concat(response.result.items);
-
-nextPageToken=response.result.nextPageToken;
-
-pages++;
-
-setProgress(Math.min(100,pages*10));
-
-log("Loaded "+allItems.length+" videos");
-
-}while(nextPageToken);
-
-setProgress(100);
-
-renderPage();
-
+  renderPage();
+  if(allItems.length < totalVideos) showLoadMoreButton();
 }
 
+// ---- LOAD MORE BUTTON ----
+function showLoadMoreButton(){
+  let btn = document.getElementById("loadMoreBtn");
+  if(!btn){
+    btn = document.createElement("button");
+    btn.id = "loadMoreBtn";
+    btn.innerText = "Load More Videos";
+    btn.onclick = async ()=>{
+      btn.disabled = true;
+      await loadPlaylistBatch();
+      btn.disabled = false;
+    };
+    document.body.appendChild(btn);
+  }
+  if(allItems.length >= totalVideos){ btn.remove(); }
+}
+
+// ---- RENDERING ----
 function renderPage(){
-
-const start=currentPage*PAGE_SIZE;
-const end=start+PAGE_SIZE;
-
-renderVideos(allItems.slice(start,end));
-
+  const start = currentPage*PAGE_SIZE;
+  const end = start + PAGE_SIZE;
+  renderVideos(allItems.slice(start,end));
 }
 
 function renderVideos(items){
-
-const container=document.getElementById("videos");
-container.innerHTML="";
-
-items.forEach(item=>{
-
-const videoId=item.snippet.resourceId.videoId;
-const title=item.snippet.title;
-const thumb=item.snippet.thumbnails.medium.url;
-
-const url=`https://www.youtube.com/watch?v=${videoId}`;
-
-let warning=(title==="Deleted video"||title==="Private video");
-
-let selected=selectedVideos.has(url);
-
-let icon="❌";
-
-if(selected) icon="✅";
-
-if(warning && !selected) icon="⚠️❌";
-if(warning && selected) icon="⚠️✅";
-
-const div=document.createElement("div");
-div.className="videoCard";
-
-div.onclick=()=>toggleVideo(url,warning,div);
-
-div.innerHTML=`
-
-<div class="icon">${icon}</div>
-
-<img src="${thumb}">
-
-<div>${title}</div>
-
-`;
-
-container.appendChild(div);
-
-});
-
+  const container = document.getElementById("videos");
+  container.innerHTML = "";
+  items.forEach(item=>{
+    const videoId = item.snippet.resourceId.videoId;
+    const title = item.snippet.title;
+    const thumb = item.snippet.thumbnails.medium.url;
+    const url = `https://www.youtube.com/watch?v=${videoId}`;
+    let warning = (title==="Deleted video"||title==="Private video");
+    let selected = selectedVideos.has(url);
+    let icon = "❌";
+    if(selected) icon="✅";
+    if(warning && !selected) icon="⚠️❌";
+    if(warning && selected) icon="⚠️✅";
+    const div = document.createElement("div");
+    div.className = "videoCard";
+    div.onclick = ()=>toggleVideo(url,warning,div);
+    div.innerHTML = `<div class="icon">${icon}</div><img src="${thumb}"><div>${title}</div>`;
+    container.appendChild(div);
+  });
 }
 
+// ---- VIDEO SELECTION ----
 function toggleVideo(url,warning,card){
-
-if(selectedVideos.has(url))
-selectedVideos.delete(url);
-else
-selectedVideos.add(url);
-
-updateCardIcon(url,warning,card);
-
+  if(selectedVideos.has(url)) selectedVideos.delete(url);
+  else selectedVideos.add(url);
+  updateCardIcon(url,warning,card);
 }
-
 function updateCardIcon(url,warning,card){
-
-let selected=selectedVideos.has(url);
-
-let icon="❌";
-
-if(selected) icon="✅";
-
-if(warning && !selected) icon="⚠️❌";
-if(warning && selected) icon="⚠️✅";
-
-card.querySelector(".icon").innerText=icon;
-
+  let selected = selectedVideos.has(url);
+  let icon = "❌";
+  if(selected) icon="✅";
+  if(warning && !selected) icon="⚠️❌";
+  if(warning && selected) icon="⚠️✅";
+  card.querySelector(".icon").innerText = icon;
 }
-
 function nextPage(){
-
-if((currentPage+1)*PAGE_SIZE>=allItems.length)return;
-
-currentPage++;
-renderPage();
-window.scrollTo(0,0);
-
+  if((currentPage+1)*PAGE_SIZE >= allItems.length) return;
+  currentPage++;
+  renderPage();
+  window.scrollTo(0,0);
 }
-
 function prevPage(){
-
-if(currentPage===0)return;
-
-currentPage--;
-renderPage();
-window.scrollTo(0,0);
-
+  if(currentPage===0) return;
+  currentPage--;
+  renderPage();
+  window.scrollTo(0,0);
 }
 
+// ---- SELECT / DESELECT ----
 function selectAll(){
-
-allItems.forEach(item=>{
-
-const id=item.snippet.resourceId.videoId;
-
-selectedVideos.add("https://www.youtube.com/watch?v="+id);
-
-});
-
-renderPage();
-
+  allItems.forEach(item=>{
+    const id=item.snippet.resourceId.videoId;
+    selectedVideos.add("https://www.youtube.com/watch?v="+id);
+  });
+  renderPage();
 }
-
 function deselectAll(){
-
-selectedVideos.clear();
-
-renderPage();
-
+  selectedVideos.clear();
+  renderPage();
 }
 
+// ---- SEARCH ----
 function filterVideos(){
-
-const search=document
-.getElementById("searchBox")
-.value
-.toLowerCase();
-
-document.querySelectorAll(".videoCard")
-.forEach(card=>{
-
-card.style.display=
-card.innerText.toLowerCase().includes(search)
-?"flex"
-:"none";
-
-});
-
+  const search=document.getElementById("searchBox").value.toLowerCase();
+  document.querySelectorAll(".videoCard").forEach(card=>{
+    card.style.display = card.innerText.toLowerCase().includes(search)?"flex":"none";
+  });
 }
 
+// ---- EXPORT / IMPORT ----
 function exportTXT(){
-
-const content=[...selectedVideos].join("\n");
-
-const blob=new Blob([content],{type:"text/plain"});
-
-const a=document.createElement("a");
-
-a.href=URL.createObjectURL(blob);
-
-a.download="selected_links.txt";
-
-a.click();
-
+  const content=[...selectedVideos].join("\n");
+  const blob = new Blob([content],{type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download="selected_links.txt";
+  a.click();
 }
-
 function importLinks(){
-
-const file=document.getElementById("importFile").files[0];
-
-if(!file)return;
-
-const reader=new FileReader();
-
-reader.onload=function(e){
-
-const lines=e.target.result
-.split("\n")
-.map(x=>x.trim())
-.filter(x=>x);
-
-lines.forEach(l=>selectedVideos.add(l));
-
-log("Imported "+lines.length+" links");
-
-document.getElementById("importFile").value="";
-
-renderPage();
-
-};
-
-reader.readAsText(file);
-
+  const file=document.getElementById("importFile").files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const lines = e.target.result.split("\n").map(x=>x.trim()).filter(x=>x);
+    lines.forEach(l=>selectedVideos.add(l));
+    log("Imported "+lines.length+" links");
+    document.getElementById("importFile").value="";
+    renderPage();
+  };
+  reader.readAsText(file);
 }
 
 gapiLoaded();
-
 </script>
-
 </body>
 </html>
